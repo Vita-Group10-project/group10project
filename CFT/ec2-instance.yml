@@ -5,6 +5,10 @@ Parameters:
   KeyName:
     Type: AWS::EC2::KeyPair::KeyName
 
+  LatestAmi:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
 Resources:
   MyEC2:
     Type: AWS::EC2::Instance
@@ -12,8 +16,3 @@ Resources:
       InstanceType: t2.micro
       KeyName: !Ref KeyName
       ImageId: !Ref LatestAmi
-
-Parameters:
-  LatestAmi:
-    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
