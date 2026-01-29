@@ -83,8 +83,8 @@ Resources:
       Name: !Ref GlueJobName
       Role: !GetAtt GlueExecutionRole.Arn
       GlueVersion: "4.0"
-      WorkerType: G.1X
-      NumberOfWorkers: 3
+      WorkerType: !Ref WorkerType
+      NumberOfWorkers: !Ref NumberOfWorkers
 
       Command:
         Name: glueetl
