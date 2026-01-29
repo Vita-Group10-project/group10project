@@ -29,7 +29,7 @@ jobs:
       - name: Start AWS Glue Job
         run: |
           aws glue start-job-run \
-          --job-name clean-etl-job \
+          --job-name gluejob \
           --arguments '{
             "--SCRIPT_S3_PATH":"s3://bronze-10/script/gluejob.py",
             "--RAW_INPUT_PATH":"s3://group10-entire-dataset/unzip_csv/",
