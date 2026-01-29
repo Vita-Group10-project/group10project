@@ -26,8 +26,11 @@ job.init(args["JOB_NAME"], args)
 # =====================================================
 # PATHS (S3)
 # =====================================================
-BRONZE_INPUT_PATH = "s3://your-bucket/sample1/"
-SILVER_OUTPUT_PATH = "s3://your-bucket/sample1/new_cleaned/"
+BRONZE_INPUT_PATH = args["BRONZE_INPUT_PATH"]
+SILVER_OUTPUT_PATH = args["SILVER_OUTPUT_PATH"]
+
+print("SOURCE PATH :", BRONZE_INPUT_PATH)
+print("TARGET PATH :", SILVER_OUTPUT_PATH)
 
 # =====================================================
 # READ BRONZE (CSV OR PARQUET)
