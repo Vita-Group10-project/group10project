@@ -36,7 +36,6 @@ jobs:
             --parameter-overrides \
               GlueJobName=glueETL \
               ScriptS3Path=s3://bronze-10/script/gluejob.py \
-
             --region us-east-1
 
 
