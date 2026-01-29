@@ -33,7 +33,7 @@ jobs:
           aws glue start-job-run \
             --job-name gluejob \
             --arguments "{
-              \"--RAW_INPUT_PATH\":\"s3://group10-entire-dataset/unzip_csv/OP_DTL_GNRL_PGYR2024_P06302025_06162025.csv\",
+              \"--RAW_INPUT_PATH\":\"s3://group10-entire-dataset/unzip_csv/\",
               \"--OUTPUT_PATH\":\"s3://silver-10/transformed/\"
           }"
 
