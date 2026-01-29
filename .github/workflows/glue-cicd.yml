@@ -32,7 +32,7 @@ jobs:
           set -x
           aws glue start-job-run \
             --job-name gluejob \
-            --region us-east-1
+            --region us-east-1 \
             --arguments "{
               \"--source\":\"s3://group10-entire-dataset/unzip_csv/\",
               \"--target\":\"s3://silver-10/transformed/\"
