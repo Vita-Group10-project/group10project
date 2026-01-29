@@ -30,13 +30,14 @@ jobs:
       - name: Deploy Glue Job via CloudFormation
         run: |
           aws cloudformation deploy \
-            --template-file CFT/glue-job.yaml \
-            --stack-name glue-job-stack \
+            --template-file CFT/glue_job.yml \
+            --stack-name glue-creation \
             --capabilities CAPABILITY_NAMED_IAM \
             --parameter-overrides \
-              GlueJobName=glueETL \
-              ScriptS3Path=s3://bronze-10/script/gluejob.py \
+            GlueJobName=gluejob \
+            ScriptS3Path=s3://bronze-10/script/gluejob.py \
             --region us-east-1
+
 
       - name: Start AWS Glue Job
         run: |
