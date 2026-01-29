@@ -1,4 +1,3 @@
-
 import sys
 from pyspark.context import SparkContext
 from awsglue.context import GlueContext
@@ -20,7 +19,7 @@ spark = glueContext.spark_session
 # =====================================================
 # JOB PARAMETERS (OPTIONAL BUT RECOMMENDED)
 # =====================================================
-args = getResolvedOptions(sys.argv, ["JOB_NAME", "BRONZE_INPUT_PATH", "SILVER_OUTPUT_PATH"])
+args = getResolvedOptions(sys.argv, ["JOB_NAME"])
 
 job = Job(glueContext)
 job.init(args["JOB_NAME"], args)
@@ -31,15 +30,19 @@ BRONZE_INPUT_PATH = "s3://your-bucket/sample1/"
 SILVER_OUTPUT_PATH = "s3://your-bucket/sample1/new_cleaned/"
 
 # =====================================================
-# READ BRONZE (PARQUET ONLY)
+# READ BRONZE (CSV OR PARQUET)
 # =====================================================
-df = (
-    spark.read
-         .option("header", "true")
-         .option("inferSchema", "true")
-         .csv(BRONZE_INPUT_PATH)
-)
-print("INPUT ROW COUNT:", df.count())
+if BRONZE_INPUT_PATH.lower().endswith(".csv"):
+    df = (
+        spark.read
+        .option("header", "true")
+        .option("inferSchema", "true")
+        .option("multiLine", "true")
+        .option("escape", "\"")
+        .csv(BRONZE_INPUT_PATH)
+    )
+else:
+    df = spark.read.parquet(BRONZE_INPUT_PATH)
 # =====================================================
 # DROP EARLY NOISE COLUMNS
 # =====================================================
@@ -358,12 +361,15 @@ df_final = df.dropna(
 )
 
 # =====================================================
-# WRITE SILVER (PARQUET)
+# WRITE SILVER (CSV)
 # =====================================================
 (
     df_final
         .write
-        .mode("overwrite")        # change to "append" for bookmarks
-        .parquet(SILVER_OUTPUT_PATH)
+        .mode("overwrite")        # or "append"
+        .option("header", "true")
+        .option("quoteAll", "true")
+        .option("escape", "\"")
+        .csv(SILVER_OUTPUT_PATH)
 )
 job.commit()
