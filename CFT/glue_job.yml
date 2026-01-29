@@ -24,6 +24,18 @@ Parameters:
     Description: Default transformed output path
     Default: s3://silver-10/transformed/
     
+  WorkerType:
+    Type: String
+    Default: G.1X
+    AllowedValues:
+      - G.1X
+      - G.2X
+
+  NumberOfWorkers:
+    Type: Number
+    Default: 3
+
+    
 Resources:
 
   # -------------------------------------------------
@@ -85,6 +97,8 @@ Resources:
         "--enable-continuous-cloudwatch-log": "true"
         "--enable-glue-datacatalog": ""
         "--TempDir": !Ref TempDir
+        "--BRONZE_INPUT_PATH": !Ref BronzeInputPath
+        "--SILVER_OUTPUT_PATH": !Ref SilverOutputPath
 
       ExecutionProperty:
         MaxConcurrentRuns: 1
