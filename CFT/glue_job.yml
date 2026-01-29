@@ -13,7 +13,17 @@ Parameters:
   TempDir:
     Type: String
     Default: s3://bronze-10/temp/
+    
+BronzeInputPath:
+    Type: String
+    Description: Default raw input path
+    Default: s3://group10-entire-dataset/unzip_csv/
 
+  SilverOutputPath:
+    Type: String
+    Description: Default transformed output path
+    Default: s3://silver-10/transformed/
+    
 Resources:
 
   # -------------------------------------------------
