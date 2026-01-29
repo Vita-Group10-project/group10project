@@ -36,8 +36,11 @@ jobs:
             --parameter-overrides \
               GlueJobName=glueETL \
               ScriptS3Path=s3://bronze-10/script/gluejob.py \
+              WorkerType=G.1X \
+              NumberOfWorkers=5 \
+              BronzeInputPath=s3://group10-entire-dataset/unzip_csv/ \
+              SilverOutputPath=s3://silver-10/transformed/ \
             --region us-east-1
-
 
       - name: Start AWS Glue Job
         run: |
