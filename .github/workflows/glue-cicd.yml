@@ -34,7 +34,7 @@ jobs:
             --stack-name glue-creation \
             --capabilities CAPABILITY_NAMED_IAM \
             --parameter-overrides \
-              GlueJobName=gluejob \
+              GlueJobName=glueETL \
               ScriptS3Path=s3://bronze-10/script/gluejob.py \
 
             --region us-east-1
@@ -44,7 +44,7 @@ jobs:
         run: |
           set -x
           aws glue start-job-run \
-            --job-name gluejob \
+            --job-name glueETL \
             --region us-east-1 \
             --arguments "{
               \"--source\":\"s3://group10-entire-dataset/unzip_csv/OP_DTL_GNRL_PGYR2024_P06302025_06162025.csv\",
