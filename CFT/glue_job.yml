@@ -22,7 +22,7 @@ Parameters:
   SilverOutputPath:
     Type: String
     Description: Default transformed output path
-    Default: s3://silver-10/transformed/
+    Default: s3://silver-10/transformed/data/
     
   WorkerType:
     Type: String
