@@ -1,10 +1,10 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: AWS Glue Job for CSV to Parquet ETL
+Description: AWS Glue Job 
 
 Parameters:
   GlueJobName:
     Type: String
-    Default: gluejob
+    Default: glueETL
 
   ScriptS3Path:
     Type: String
