@@ -369,7 +369,7 @@ df_final = df.dropna(
 (
     df_final
         .write
-        .mode("overwrite")        # or "append"
+        .mode("append")        # or "override"
         .option("header", "true")
         .option("quoteAll", "true")
         .option("escape", "\"")
