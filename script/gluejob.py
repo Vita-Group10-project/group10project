@@ -19,7 +19,7 @@ spark = glueContext.spark_session
 # =====================================================
 # JOB PARAMETERS (OPTIONAL BUT RECOMMENDED)
 # =====================================================
-args = getResolvedOptions(sys.argv, ["JOB_NAME"])
+args = getResolvedOptions(sys.argv, ["JOB_NAME", "BRONZE_INPUT_PATH", "SILVER_OUTPUT_PATH"])
 
 job = Job(glueContext)
 job.init(args["JOB_NAME"], args)
