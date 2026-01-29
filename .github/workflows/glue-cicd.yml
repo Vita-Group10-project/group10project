@@ -39,7 +39,7 @@ jobs:
               WorkerType=G.1X \
               NumberOfWorkers=5 \
               BronzeInputPath=s3://group10-entire-dataset/unzip_csv/ \
-              SilverOutputPath=s3://silver-10/transformed/ \
+              SilverOutputPath=s3://silver-10/transformed/data/ \
             --region us-east-1
 
       - name: Start AWS Glue Job
@@ -50,6 +50,6 @@ jobs:
             --region us-east-1 \
             --arguments "{
               \"--BRONZE_INPUT_PATH\":\"s3://group10-entire-dataset/unzip_csv/OP_DTL_GNRL_PGYR2024_P06302025_06162025.csv\",
-              \"--SILVER_OUTPUT_PATH\":\"s3://silver-10/transformed/\"
+              \"--SILVER_OUTPUT_PATH\":\"s3://silver-10/transformed/data/\"
           }"
 
