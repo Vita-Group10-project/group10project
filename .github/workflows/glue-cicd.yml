@@ -1,4 +1,4 @@
-name: Upload ETL Script to S3
+name: Glue-ETL-Pipeline
 
 on:
   workflow_dispatch:
