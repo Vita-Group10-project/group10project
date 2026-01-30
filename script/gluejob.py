@@ -19,33 +19,33 @@ spark = glueContext.spark_session
 # =====================================================
 # JOB PARAMETERS (OPTIONAL BUT RECOMMENDED)
 # =====================================================
-args = getResolvedOptions(sys.argv, ["JOB_NAME", "BRONZE_INPUT_PATH", "SILVER_OUTPUT_PATH"])
+args = getResolvedOptions(sys.argv, ["JOB_NAME", "INPUT_PATH", "OUTPUT_PATH"])
 
 job = Job(glueContext)
 job.init(args["JOB_NAME"], args)
 # =====================================================
 # PATHS (S3)
 # =====================================================
-BRONZE_INPUT_PATH = args["BRONZE_INPUT_PATH"]
-SILVER_OUTPUT_PATH = args["SILVER_OUTPUT_PATH"]
+INPUT_PATH = args["INPUT_PATH"]
+OUTPUT_PATH = args["OUTPUT_PATH"]
 
-print("SOURCE PATH :", BRONZE_INPUT_PATH)
-print("TARGET PATH :", SILVER_OUTPUT_PATH)
+print("SOURCE PATH :", INPUT_PATH)
+print("TARGET PATH :", OUTPUT_PATH)
 
 # =====================================================
 # READ BRONZE (CSV OR PARQUET)
 # =====================================================
-if BRONZE_INPUT_PATH.lower().endswith(".csv"):
+if INPUT_PATH.lower().endswith(".csv"):
     df = (
         spark.read
         .option("header", "true")
         .option("inferSchema", "true")
         .option("multiLine", "true")
         .option("escape", "\"")
-        .csv(BRONZE_INPUT_PATH)
+        .csv(INPUT_PATH)
     )
 else:
-    df = spark.read.parquet(BRONZE_INPUT_PATH)
+    df = spark.read.parquet(INPUT_PATH)
 # =====================================================
 # DROP EARLY NOISE COLUMNS
 # =====================================================
@@ -373,6 +373,6 @@ df_final = df.dropna(
         .option("header", "true")
         .option("quoteAll", "true")
         .option("escape", "\"")
-        .csv(SILVER_OUTPUT_PATH)
+        .csv(OUTPUT_PATH)
 )
 job.commit()
