@@ -1,39 +1,77 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Glue Crawler for Enriched Zone Data
+Description: Crawler for Enriched Layer
 
 
+# ==================================================
+# PARAMETERS
+# ==================================================
+Parameters:
+
+  DatabaseName:
+    Type: String
+    Default: enrich
+    Description: Athena/Glue database name
+
+  TargetPath:
+    Type: String
+    Default: s3://enriched-zone-00/transformed/data/
+    Description: S3 path to enriched transformed data
+
+  TablePrefix:
+    Type: String
+    Default: enrich_
+    Description: Prefix for generated Glue tables
+
+  CrawlerName:
+    Type: String
+    Default: enrich-transformed-crawler
+    Description: Name of Glue crawler
+
+  GlueRoleName:
+    Type: String
+    Default: glue-execution-role
+    Description: Existing Glue IAM Role name (NOT ARN)
+
+
+# ==================================================
+# RESOURCES
+# ==================================================
 Resources:
 
-  # ==========================================
-  # GLUE DATABASE (Athena database)
-  # ==========================================
+
+  # ==================================================
+  # GLUE DATABASE (Athena Catalog DB)
+  # ==================================================
   EnrichDatabase:
     Type: AWS::Glue::Database
     Properties:
       CatalogId: !Ref AWS::AccountId
       DatabaseInput:
-        Name: enrich
-        Description: Enriched analytics layer
+        Name: !Ref DatabaseName
+        Description: Enriched/Silver analytics layer tables
 
 
-  # ==========================================
-  # GLUE CRAWLER (runs on enriched S3 path)
-  # ==========================================
+  # ==================================================
+  # GLUE CRAWLER
+  # ==================================================
   EnrichCrawler:
     Type: AWS::Glue::Crawler
     Properties:
-      Name: enrich-transformed-crawler
+      Name: !Ref CrawlerName
 
-      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/glue-execution-role
+      # Build ARN automatically using account id
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/${GlueRoleName}
 
-      DatabaseName: enrich
+      DatabaseName: !Ref DatabaseName
 
       Targets:
         S3Targets:
-          - Path: s3://enriched-zone-00/transformed/data/
+          - Path: !Ref TargetPath
 
-      TablePrefix: enrich_
+      TablePrefix: !Ref TablePrefix
 
+
+      # ===== Best Practice Settings =====
       SchemaChangePolicy:
         UpdateBehavior: UPDATE_IN_DATABASE
         DeleteBehavior: LOG
@@ -41,10 +79,28 @@ Resources:
       RecrawlPolicy:
         RecrawlBehavior: CRAWL_NEW_FOLDERS_ONLY
 
+      Configuration: |
+        {
+          "Version": 1.0,
+          "Grouping": {
+            "TableGroupingPolicy": "CombineCompatibleSchemas"
+          }
+        }
 
+
+# ==================================================
+# OUTPUTS
+# ==================================================
 Outputs:
+
   DatabaseName:
-    Value: enrich
+    Description: Created Glue database
+    Value: !Ref DatabaseName
 
   CrawlerName:
-    Value: enrich-transformed-crawler
+    Description: Created crawler
+    Value: !Ref CrawlerName
+
+  CrawlPath:
+    Description: S3 path being crawled
+    Value: !Ref TargetPath
