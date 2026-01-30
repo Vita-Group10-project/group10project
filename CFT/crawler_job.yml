@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Crawler for Enriched Layer
+Description: Glue Database + Crawler for Enriched Layer
 
 
 # ==================================================
@@ -40,7 +40,7 @@ Resources:
 
 
   # ==================================================
-  # GLUE DATABASE (Athena Catalog DB)
+  # GLUE DATABASE
   # ==================================================
   EnrichDatabase:
     Type: AWS::Glue::Database
@@ -59,7 +59,6 @@ Resources:
     Properties:
       Name: !Ref CrawlerName
 
-      # Build ARN automatically using account id
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/${GlueRoleName}
 
       DatabaseName: !Ref DatabaseName
@@ -71,36 +70,6 @@ Resources:
       TablePrefix: !Ref TablePrefix
 
 
-      # ===== Best Practice Settings =====
+      # ✅ FIXED SETTINGS (Glue required combo)
       SchemaChangePolicy:
-        UpdateBehavior: UPDATE_IN_DATABASE
-        DeleteBehavior: LOG
-
-      RecrawlPolicy:
-        RecrawlBehavior: CRAWL_NEW_FOLDERS_ONLY
-
-      Configuration: |
-        {
-          "Version": 1.0,
-          "Grouping": {
-            "TableGroupingPolicy": "CombineCompatibleSchemas"
-          }
-        }
-
-
-# ==================================================
-# OUTPUTS
-# ==================================================
-Outputs:
-
-  DatabaseName:
-    Description: Created Glue database
-    Value: !Ref DatabaseName
-
-  CrawlerName:
-    Description: Created crawler
-    Value: !Ref CrawlerName
-
-  CrawlPath:
-    Description: S3 path being crawled
-    Value: !Ref TargetPath
+        UpdateBehavior:
