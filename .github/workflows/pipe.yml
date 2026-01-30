@@ -1,0 +1,47 @@
+name: Glue-ETL-Pipeline
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # ✅ Run Terraform for backend folder first
+      - name: Terraform Init (backend)
+        run: terraform init
+        working-directory: backend
+
+      - name: Terraform Apply (backend)
+        run: terraform apply -auto-approve
+        working-directory: backend
+
+      # ✅ Run Terraform for infra folder second
+      - name: Terraform Init (infra)
+        run: terraform init
+        working-directory: infra
+
+      - name: Terraform Plan (infra)
+        run: terraform plan
+        working-directory: infra
+
+      - name: Terraform Apply (infra)
+        run: terraform apply -auto-approve
+        working-directory: infra
