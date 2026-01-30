@@ -33,7 +33,7 @@ Parameters:
 
   NumberOfWorkers:
     Type: Number
-    Default: 3
+    Default: 10
 
     
 Resources:
