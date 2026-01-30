@@ -1,40 +1,36 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Crawler for Enriched Zone
-
-Parameters:
-
-  DatabaseName:
-    Type: String
-    Default: enrich-database
-
-  TargetPath:
-    Type: String
-    Default: s3://enriched-zone-00/transformed/data/
+Description: Glue Crawler for Enriched Zone Data
 
 
 Resources:
 
+  # ==========================================
+  # GLUE DATABASE (Athena database)
+  # ==========================================
   EnrichDatabase:
     Type: AWS::Glue::Database
     Properties:
       CatalogId: !Ref AWS::AccountId
       DatabaseInput:
-        Name: !Ref DatabaseName
+        Name: enrich
+        Description: Enriched analytics layer
 
 
+  # ==========================================
+  # GLUE CRAWLER (runs on enriched S3 path)
+  # ==========================================
   EnrichCrawler:
     Type: AWS::Glue::Crawler
     Properties:
       Name: enrich-transformed-crawler
 
-      # 🔥 no parameter required
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/glue-execution-role
 
-      DatabaseName: !Ref DatabaseName
+      DatabaseName: enrich
 
       Targets:
         S3Targets:
-          - Path: !Ref TargetPath
+          - Path: s3://enriched-zone-00/transformed/data/
 
       TablePrefix: enrich_
 
@@ -42,7 +38,13 @@ Resources:
         UpdateBehavior: UPDATE_IN_DATABASE
         DeleteBehavior: LOG
 
+      RecrawlPolicy:
+        RecrawlBehavior: CRAWL_NEW_FOLDERS_ONLY
+
 
 Outputs:
+  DatabaseName:
+    Value: enrich
+
   CrawlerName:
     Value: enrich-transformed-crawler
