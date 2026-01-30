@@ -422,7 +422,7 @@ df_final = df_final.select([
 (
     df_final
         .write
-        .mode("overwrite")        
+        .mode("append")        
         .parquet(OUTPUT_PATH)
 )
 job.commit()
