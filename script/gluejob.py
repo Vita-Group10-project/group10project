@@ -16,33 +16,35 @@ sc = SparkContext.getOrCreate()
 glueContext = GlueContext(sc)
 spark = glueContext.spark_session
 
+spark.conf.set("spark.sql.parquet.datetimeRebaseModeInWrite", "LEGACY")
+spark.conf.set("spark.sql.parquet.int96RebaseModeInWrite", "LEGACY")
 # =====================================================
 # JOB PARAMETERS (OPTIONAL BUT RECOMMENDED)
 # =====================================================
-args = getResolvedOptions(sys.argv, ["JOB_NAME"])
+args = getResolvedOptions(sys.argv, ["JOB_NAME", "INPUT_PATH", "OUTPUT_PATH"])
 
 job = Job(glueContext)
 job.init(args["JOB_NAME"], args)
 # =====================================================
 # PATHS (S3)
 # =====================================================
-BRONZE_INPUT_PATH = "s3://group10-entire-dataset/puneet_par/OP_DTL_GNRL_PGYR2024_P06302025_06162025.parquet/"
-SILVER_OUTPUT_PATH = "s3://enriched-zone-00/transformed3/"
+INPUT_PATH = "s3://raw-zone-00/data/OP_DTL_GNRL_PGYR2024_P06302025_06162025.csv"
+OUTPUT_PATH = "s3://enriched-zone-00/transformed_1/"
 
 # =====================================================
 # READ BRONZE (CSV OR PARQUET)
 # =====================================================
-if BRONZE_INPUT_PATH.lower().endswith(".csv"):
+if INPUT_PATH.lower().endswith(".csv"):
     df = (
         spark.read
         .option("header", "true")
         .option("inferSchema", "false")
-        .option("multiLine", "true")
+        .option("multiLine", "false")
         .option("escape", "\"")
-        .csv(BRONZE_INPUT_PATH)
+        .csv(INPUT_PATH)
     )
 else:
-    df = spark.read.parquet(BRONZE_INPUT_PATH)
+    df = spark.read.parquet(INPUT_PATH)
 # =====================================================
 # DROP EARLY NOISE COLUMNS
 # =====================================================
@@ -335,7 +337,6 @@ df = df.withColumnRenamed(
 # MANUFACTURER STATE NORMALIZATION
 # =====================================================
 
-
 # Executor-safe Spark map expression
 
 df = df.withColumn(
@@ -408,7 +409,11 @@ for old, new in rename_map.items():
     if old in df_final.columns:
         df_final = df_final.withColumnRenamed(old, new)
 
-assert all("_" not in c for c in df_final.columns)
+df_final = df_final.select([
+    col(c).alias(c.replace(" ", "_"))
+    for c in df_final.columns
+])
+
 
 
 # =====================================================
@@ -418,6 +423,6 @@ assert all("_" not in c for c in df_final.columns)
     df_final
         .write
         .mode("overwrite")        
-        .parquet(SILVER_OUTPUT_PATH)
+        .parquet(OUTPUT_PATH)
 )
 job.commit()
