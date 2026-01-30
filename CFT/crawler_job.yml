@@ -1,44 +1,76 @@
-# ==================================================
-# GLUE DATABASE  (Athena DB name = enrich)
-# ==================================================
-EnrichDatabase:
-  Type: AWS::Glue::Database
-  Properties:
-    CatalogId: !Ref AWS::AccountId
-    DatabaseInput:
-      Name: enrich
-      Description: Enriched transformed layer for analytics/reporting
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Crawler for Enriched Zone
 
 
 # ==================================================
-# GLUE CRAWLER
+# PARAMETERS
 # ==================================================
-EnrichCrawler:
-  Type: AWS::Glue::Crawler
-  Properties:
-    Name: enrich-crawler
+Parameters:
 
-    Role: !GetAtt GlueExecutionRole.Arn
+  DatabaseName:
+    Type: String
+    Default: enrich-database
 
-    DatabaseName: !Ref enrich-database
+  TargetPath:
+    Type: String
+    Default: s3://enriched-zone-00/transformed/data/
 
-    Targets:
-      S3Targets:
-        - Path: s3://enriched-zone-00/transformed/data/
+  GlueRoleArn:
+    Type: String
+    Description: Existing Glue Execution Role ARN
 
-    TablePrefix: enrich_
 
-    SchemaChangePolicy:
-      UpdateBehavior: UPDATE_IN_DATABASE
-      DeleteBehavior: LOG
+# ==================================================
+# RESOURCES
+# ==================================================
+Resources:
 
-    RecrawlPolicy:
-      RecrawlBehavior: CRAWL_EVERYTHING
 
-    Configuration: >
-      {
-        "Version": 1.0,
-        "Grouping": {
-          "TableGroupingPolicy": "CombineCompatibleSchemas"
-        }
-      }
+  # ==================================================
+  # GLUE DATABASE
+  # ==================================================
+  EnrichDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Name: !Ref DatabaseName
+        Description: Enriched transformed tables for analytics
+
+
+  # ==================================================
+  # GLUE CRAWLER
+  # ==================================================
+  EnrichCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Name: enrich-transformed-crawler
+
+      Role: !Ref GlueRoleArn
+
+      DatabaseName: !Ref DatabaseName
+
+      Targets:
+        S3Targets:
+          - Path: !Ref TargetPath
+
+      TablePrefix: enrich_
+
+      SchemaChangePolicy:
+        UpdateBehavior: UPDATE_IN_DATABASE
+        DeleteBehavior: LOG
+
+      RecrawlPolicy:
+        RecrawlBehavior: CRAWL_EVERYTHING
+
+
+# ==================================================
+# OUTPUTS
+# ==================================================
+Outputs:
+
+  Database:
+    Value: !Ref DatabaseName
+
+  CrawlerName:
+    Value: enrich-transformed-crawler
