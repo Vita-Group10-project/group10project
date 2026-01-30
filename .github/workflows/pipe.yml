@@ -25,13 +25,13 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       # ✅ Run Terraform for backend folder first
-      - name: Terraform Init (backend)
-        run: terraform init
-        working-directory: terraform/backend1
+      # - name: Terraform Init (backend)
+      #   run: terraform init
+      #   working-directory: terraform/backend1
 
-      - name: Terraform Apply (backend)
-        run: terraform apply -auto-approve
-        working-directory: terraform/backend1
+      # - name: Terraform Apply (backend)
+      #   run: terraform apply -auto-approve
+      #   working-directory: terraform/backend1
 
       # ✅ Run Terraform for infra folder second
       - name: Terraform Init (infra)
