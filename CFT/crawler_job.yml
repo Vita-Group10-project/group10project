@@ -28,7 +28,7 @@ Resources:
       Name: enrich-transformed-crawler
 
       # 🔥 no parameter required
-      Role: !Sub arn:aws:iam::${AWS::497330444536}:role/glue-execution-role
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/glue-execution-role
 
       DatabaseName: !Ref DatabaseName
 
