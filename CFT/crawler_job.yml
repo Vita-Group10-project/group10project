@@ -1,0 +1,44 @@
+# ==================================================
+# GLUE DATABASE  (Athena DB name = enrich)
+# ==================================================
+EnrichDatabase:
+  Type: AWS::Glue::Database
+  Properties:
+    CatalogId: !Ref AWS::AccountId
+    DatabaseInput:
+      Name: enrich
+      Description: Enriched transformed layer for analytics/reporting
+
+
+# ==================================================
+# GLUE CRAWLER
+# ==================================================
+EnrichCrawler:
+  Type: AWS::Glue::Crawler
+  Properties:
+    Name: enrich-crawler
+
+    Role: !GetAtt GlueExecutionRole.Arn
+
+    DatabaseName: !Ref enrich-database
+
+    Targets:
+      S3Targets:
+        - Path: s3://enriched-zone-00/transformed/data/
+
+    TablePrefix: enrich_
+
+    SchemaChangePolicy:
+      UpdateBehavior: UPDATE_IN_DATABASE
+      DeleteBehavior: LOG
+
+    RecrawlPolicy:
+      RecrawlBehavior: CRAWL_EVERYTHING
+
+    Configuration: >
+      {
+        "Version": 1.0,
+        "Grouping": {
+          "TableGroupingPolicy": "CombineCompatibleSchemas"
+        }
+      }
