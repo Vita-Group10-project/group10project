@@ -27,21 +27,21 @@ jobs:
       # ✅ Run Terraform for backend folder first
       - name: Terraform Init (backend)
         run: terraform init
-        working-directory: backend1
+        working-directory: terraform/backend1
 
       - name: Terraform Apply (backend)
         run: terraform apply -auto-approve
-        working-directory: backend1
+        working-directory: terraform/backend1
 
       # ✅ Run Terraform for infra folder second
       - name: Terraform Init (infra)
         run: terraform init
-        working-directory: infra1
+        working-directory: terraform/infra1
 
       - name: Terraform Plan (infra)
         run: terraform plan
-        working-directory: infra1
+        working-directory: terraform/infra1
 
       - name: Terraform Apply (infra)
         run: terraform apply -auto-approve
-        working-directory: infra1
+        working-directory: terraform/infra1
