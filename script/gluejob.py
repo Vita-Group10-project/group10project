@@ -19,33 +19,30 @@ spark = glueContext.spark_session
 # =====================================================
 # JOB PARAMETERS (OPTIONAL BUT RECOMMENDED)
 # =====================================================
-args = getResolvedOptions(sys.argv, ["JOB_NAME", "INPUT_PATH", "OUTPUT_PATH"])
+args = getResolvedOptions(sys.argv, ["JOB_NAME"])
 
 job = Job(glueContext)
 job.init(args["JOB_NAME"], args)
 # =====================================================
 # PATHS (S3)
 # =====================================================
-INPUT_PATH = args["INPUT_PATH"]
-OUTPUT_PATH = args["OUTPUT_PATH"]
-
-print("SOURCE PATH :", INPUT_PATH)
-print("TARGET PATH :", OUTPUT_PATH)
+BRONZE_INPUT_PATH = "s3://group10-entire-dataset/puneet_par/OP_DTL_GNRL_PGYR2024_P06302025_06162025.parquet/"
+SILVER_OUTPUT_PATH = "s3://enriched-zone-00/transformed3/"
 
 # =====================================================
 # READ BRONZE (CSV OR PARQUET)
 # =====================================================
-if INPUT_PATH.lower().endswith(".csv"):
+if BRONZE_INPUT_PATH.lower().endswith(".csv"):
     df = (
         spark.read
         .option("header", "true")
-        .option("inferSchema", "true")
+        .option("inferSchema", "false")
         .option("multiLine", "true")
         .option("escape", "\"")
-        .csv(INPUT_PATH)
+        .csv(BRONZE_INPUT_PATH)
     )
 else:
-    df = spark.read.parquet(INPUT_PATH)
+    df = spark.read.parquet(BRONZE_INPUT_PATH)
 # =====================================================
 # DROP EARLY NOISE COLUMNS
 # =====================================================
@@ -91,6 +88,9 @@ cols_to_drop_early = [
     "Delay_in_Publication_Indicator",
     "Dispute_Status_for_Publication",
     "Related_Product_Indicator",
+    "Payment_Publication_Date",
+
+     
 
     "Associated_Drug_or_Biological_NDC_1",
     "Associated_Device_or_Medical_Supply_PDI_1",
@@ -363,16 +363,61 @@ df_final = df.dropna(
     ]
 )
 
+rename_map = {
+    "Covered_Recipient_Type": "Covered Recipient Type",
+
+    "Teaching_Hospital_Name": "Teaching Hospital Name",
+
+    "Recipient_City": "Recipient City",
+    "Recipient_Country": "Recipient Country",
+    "Recipient_State_Final": "Recipient State Final",
+
+    "Covered_Recipient_Primary_Type_1": "Recipient Category",
+
+    "Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_ID": "Manufacturer Payment Id",
+    "Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_Name": "Manufacturer Payment Name",
+    "Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_Country": "Manufacturer Payment Country",
+    "Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_State_Full": "Manufacturer Payment State",
+
+    "Manufacturer_name_base": "Manufacturer Name Base",
+
+    "Total_Amount_of_Payment_USDollars": "Total Amount Of Payment Usdollars",
+    "Number_of_Payments_Included_in_Total_Amount": "Number Of Payments Included In Total Amount",
+    "Date_of_Payment": "Date Of Payment",
+
+    "Form_of_Payment_or_Transfer_of_Value": "Form Of Payment",
+    "Nature_of_Payment_or_Transfer_of_Value": "Nature Of Payment",
+
+    "Covered_or_Noncovered_Indicator_1": "Covered Or Noncovered Indicator",
+
+    "Indicate_Drug_or_Biological_or_Device_or_Medical_Supply_1": "Medical Product Type",
+    "Product_Category_or_Therapeutic_Area_1": "Product Category",
+    "Name_of_Drug_or_Biological_or_Device_or_Medical_Supply_1": "Medical Product Name",
+
+    "Program_Year": "Program Year",
+
+    "Covered_Recipient_Full_Name": "Covered Recipient Full Name",
+    "Recipient_Unique_ID": "Recipient Unique Id",
+
+    "Specialty_Main": "Specialty Main",
+
+    "Record_ID": "Record Id"
+}
+
+for old, new in rename_map.items():
+    if old in df_final.columns:
+        df_final = df_final.withColumnRenamed(old, new)
+
+assert all("_" not in c for c in df_final.columns)
+
+
 # =====================================================
 # WRITE SILVER (CSV)
 # =====================================================
 (
     df_final
         .write
-        .mode("append")        # or "override"
-        .option("header", "true")
-        .option("quoteAll", "true")
-        .option("escape", "\"")
-        .csv(OUTPUT_PATH)
+        .mode("overwrite")        
+        .parquet(SILVER_OUTPUT_PATH)
 )
 job.commit()
