@@ -72,28 +72,28 @@ jobs:
       # ==========================================
       # WAIT FOR JOB FINISH (IMPORTANT)
       # ==========================================
-      - name: Wait for Glue job completion
-        run: |
-          while true; do
-            STATUS=$(aws glue get-job-run \
-              --job-name glueETL \
-              --run-id $JOB_RUN_ID \
-              --region us-east-1 \
-              --query 'JobRun.JobRunState' \
-              --output text)
+      # - name: Wait for Glue job completion
+      #   run: |
+      #     while true; do
+      #       STATUS=$(aws glue get-job-run \
+      #         --job-name glueETL \
+      #         --run-id $JOB_RUN_ID \
+      #         --region us-east-1 \
+      #         --query 'JobRun.JobRunState' \
+      #         --output text)
 
-            echo "Glue status: $STATUS"
+      #       echo "Glue status: $STATUS"
 
-            if [ "$STATUS" = "SUCCEEDED" ]; then
-              break
-            fi
+      #       if [ "$STATUS" = "SUCCEEDED" ]; then
+      #         break
+      #       fi
 
-            if [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "STOPPED" ]; then
-              exit 1
-            fi
+      #       if [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "STOPPED" ]; then
+      #         exit 1
+      #       fi
 
-            sleep 30
-          done
+      #       sleep 30
+      #     done
 
 
       # ==========================================
@@ -102,7 +102,7 @@ jobs:
       - name: Deploy Crawler Stack
         run: |
           aws cloudformation deploy \
-            --template-file CFT/crawler.yml \
+            --template-file CFT/crawler_job.yml \
             --stack-name my-crawler \
             --capabilities CAPABILITY_NAMED_IAM
 
