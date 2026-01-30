@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Glue Database + Crawler for Enriched Layer
+Description: Glue Database + Crawler for Enriched (Silver) Layer
 
 
 # ==================================================
@@ -72,4 +72,31 @@ Resources:
 
       # ✅ FIXED SETTINGS (Glue required combo)
       SchemaChangePolicy:
-        UpdateBehavior:
+        UpdateBehavior: LOG
+        DeleteBehavior: LOG
+
+      RecrawlPolicy:
+        RecrawlBehavior: CRAWL_NEW_FOLDERS_ONLY
+
+      Configuration: |
+        {
+          "Version": 1.0,
+          "Grouping": {
+            "TableGroupingPolicy": "CombineCompatibleSchemas"
+          }
+        }
+
+
+# ==================================================
+# OUTPUTS
+# ==================================================
+Outputs:
+
+  DatabaseName:
+    Value: !Ref DatabaseName
+
+  CrawlerName:
+    Value: !Ref CrawlerName
+
+  CrawlPath:
+    Value: !Ref TargetPath
