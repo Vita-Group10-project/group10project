@@ -7,7 +7,7 @@ on:
       - main
 
 jobs:
-  upload:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,15 +24,28 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform Init
+      # # ✅ Run Terraform for backend folder first
+      # - name: Terraform Init (backend)
+      #   run: terraform init
+      #   working-directory: backend
+
+      # - name: Terraform Apply (backend)
+      #   run: terraform apply -auto-approve
+      #   working-directory: backend
+
+      # ✅ Run Terraform for infra folder second
+      - name: Terraform Init (infra)
         run: terraform init
+        working-directory: infra
 
-      - name: Terraform Plan
+      - name: Terraform Plan (infra)
         run: terraform plan
+        working-directory: infra
 
-      - name: Terraform Apply
-        run: terraform apply -auto-approve
-
-      - name: Upload ETL script to S3
+      # ✅ Apply with variables (ONLY ONE APPLY)
+      - name: Terraform Apply (infra)
         run: |
-          aws s3 cp bronze_to_silver.py s3://glue-etl-script-00/script/bronze_to_silver.py
+          terraform apply -auto-approve \
+            -var="glue_job_name=ter-bronze-to-silver-job" \
+            -var="glue_script_s3_path=s3://ter-bronze-data-sahil/scripts/bronze_to_silver.py"
+        working-directory: infra
