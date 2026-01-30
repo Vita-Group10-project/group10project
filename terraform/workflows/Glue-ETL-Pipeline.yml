@@ -1,12 +1,3 @@
-jobs:
-  upload:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-
 name: Glue-ETL-Pipeline
 
 on:
@@ -30,7 +21,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # ✅ Terraform Steps (WRITE HERE)
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
@@ -43,7 +33,6 @@ jobs:
       - name: Terraform Apply
         run: terraform apply -auto-approve
 
-      # ✅ Upload ETL script to S3
       - name: Upload ETL script to S3
         run: |
           aws s3 cp bronze_to_silver.py s3://glue-etl-script-00/script/bronze_to_silver.py
