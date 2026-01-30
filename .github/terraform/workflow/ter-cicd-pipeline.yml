@@ -1,4 +1,4 @@
-name: Glue-ETL-Pipeline
+name: Ter-Glue-ETL-Pipeline
 
 on:
   workflow_dispatch:
