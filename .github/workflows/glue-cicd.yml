@@ -52,4 +52,16 @@ jobs:
               \"--INPUT_PATH\":\"s3://raw-zone-00/data/OP_DTL_GNRL_PGYR2024_P06302025_06162025.csv\",
               \"--OUTPUT_PATH\":\"s3://enriched-zone-00/transformed/data/\"
           }"
+          
+      - name: Deploy Crawler Stack
+        run: |
+          aws cloudformation deploy \
+            --template-file CFT/crawler.yml \
+            --stack-name my-crawler \
+            -- capabilities CAPABILITY_NAMED_IAM
 
+      # Start crawler
+      - name: Start Crawler
+        run: |
+          aws glue start-crawler \
+            --name enrich-transformed-crawler
