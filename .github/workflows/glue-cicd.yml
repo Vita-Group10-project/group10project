@@ -16,6 +16,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+
+      # ==========================================
+      # AWS AUTH
+      # ==========================================
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -23,10 +27,17 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+
+      # ==========================================
+      # UPLOAD SCRIPT
+      # ==========================================
       - name: Upload ETL script to S3
         run: |
           aws s3 cp script/gluejob.py s3://glue-etl-script-00/script/gluejob.py
 
+      # ==========================================
+      # DEPLOY GLUE JOB
+      # ==========================================
       - name: Deploy Glue Job via CloudFormation
         run: |
           aws cloudformation deploy \
@@ -42,25 +53,63 @@ jobs:
               OutputPath=s3://enriched-zone-00/transformed/data/ \
             --region us-east-1
 
+
+      # ==========================================
+      # START GLUE JOB + CAPTURE RUN ID
+      # ==========================================
       - name: Start AWS Glue Job
+        id: startjob
         run: |
-          set -x
-          aws glue start-job-run \
+          JOB_RUN_ID=$(aws glue start-job-run \
             --job-name glueETL \
             --region us-east-1 \
-            --arguments "{
-              \"--INPUT_PATH\":\"s3://raw-zone-00/data/OP_DTL_GNRL_PGYR2024_P06302025_06162025.csv\",
-              \"--OUTPUT_PATH\":\"s3://enriched-zone-00/transformed/data/\"
-          }"
-          
+            --query 'JobRunId' \
+            --output text)
+
+          echo "JOB_RUN_ID=$JOB_RUN_ID" >> $GITHUB_ENV
+
+
+      # ==========================================
+      # WAIT FOR JOB FINISH (IMPORTANT)
+      # ==========================================
+      - name: Wait for Glue job completion
+        run: |
+          while true; do
+            STATUS=$(aws glue get-job-run \
+              --job-name glueETL \
+              --run-id $JOB_RUN_ID \
+              --region us-east-1 \
+              --query 'JobRun.JobRunState' \
+              --output text)
+
+            echo "Glue status: $STATUS"
+
+            if [ "$STATUS" = "SUCCEEDED" ]; then
+              break
+            fi
+
+            if [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "STOPPED" ]; then
+              exit 1
+            fi
+
+            sleep 30
+          done
+
+
+      # ==========================================
+      # DEPLOY CRAWLER STACK
+      # ==========================================
       - name: Deploy Crawler Stack
         run: |
           aws cloudformation deploy \
             --template-file CFT/crawler.yml \
             --stack-name my-crawler \
-            -- capabilities CAPABILITY_NAMED_IAM
+            --capabilities CAPABILITY_NAMED_IAM
 
-      # Start crawler
+
+      # ==========================================
+      # START CRAWLER
+      # ==========================================
       - name: Start Crawler
         run: |
           aws glue start-crawler \
