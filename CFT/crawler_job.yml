@@ -1,10 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: Crawler for Enriched Zone
 
-
-# ==================================================
-# PARAMETERS
-# ==================================================
 Parameters:
 
   DatabaseName:
@@ -15,38 +11,24 @@ Parameters:
     Type: String
     Default: s3://enriched-zone-00/transformed/data/
 
-  GlueRoleArn:
-    Type: String
-    Description: Existing Glue Execution Role ARN
 
-
-# ==================================================
-# RESOURCES
-# ==================================================
 Resources:
 
-
-  # ==================================================
-  # GLUE DATABASE
-  # ==================================================
   EnrichDatabase:
     Type: AWS::Glue::Database
     Properties:
       CatalogId: !Ref AWS::AccountId
       DatabaseInput:
         Name: !Ref DatabaseName
-        Description: Enriched transformed tables for analytics
 
 
-  # ==================================================
-  # GLUE CRAWLER
-  # ==================================================
   EnrichCrawler:
     Type: AWS::Glue::Crawler
     Properties:
       Name: enrich-transformed-crawler
 
-      Role: !Ref GlueRoleArn
+      # 🔥 no parameter required
+      Role: !Sub arn:aws:iam::${AWS::497330444536}:role/glue-execution-role
 
       DatabaseName: !Ref DatabaseName
 
@@ -60,17 +42,7 @@ Resources:
         UpdateBehavior: UPDATE_IN_DATABASE
         DeleteBehavior: LOG
 
-      RecrawlPolicy:
-        RecrawlBehavior: CRAWL_EVERYTHING
 
-
-# ==================================================
-# OUTPUTS
-# ==================================================
 Outputs:
-
-  Database:
-    Value: !Ref DatabaseName
-
   CrawlerName:
     Value: enrich-transformed-crawler
