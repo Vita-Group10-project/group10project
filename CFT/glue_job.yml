@@ -14,12 +14,12 @@ Parameters:
     Type: String
     Default: s3://glue-etl-script-00/temp/
     
-  BronzeInputPath:
+  InputPath:
     Type: String
     Description: Default raw input path
     Default: s3://raw-zone-00/data/
 
-  SilverOutputPath:
+  OutputPath:
     Type: String
     Description: Default transformed output path
     Default: s3://enriched-zone-00/transformed/data/
@@ -67,12 +67,12 @@ Resources:
                   - s3:PutObject
                   - s3:ListBucket
                 Resource:
-                  - arn:aws:s3:::bronze-10
-                  - arn:aws:s3:::bronze-10/*
-                  - arn:aws:s3:::group10-entire-dataset
-                  - arn:aws:s3:::group10-entire-dataset/*
-                  - arn:aws:s3:::silver-10
-                  - arn:aws:s3:::silver-10/*
+                  - arn:aws:s3:::glue-etl-script-00
+                  - arn:aws:s3:::glue-etl-script-00/*
+                  - arn:aws:s3:::raw-zone-00
+                  - arn:aws:s3:::raw-zone-00/*
+                  - arn:aws:s3:::enriched-zone-00
+                  - arn:aws:s3:::enriched-zone-00/*
 
   # -------------------------------------------------
   # GLUE JOB
@@ -97,8 +97,8 @@ Resources:
         "--enable-continuous-cloudwatch-log": "true"
         "--enable-glue-datacatalog": ""
         "--TempDir": !Ref TempDir
-        "--BRONZE_INPUT_PATH": !Ref BronzeInputPath
-        "--SILVER_OUTPUT_PATH": !Ref SilverOutputPath
+        "--INPUT_PATH": !Ref InputPath
+        "--OUTPUT_PATH": !Ref OutputPath
 
       ExecutionProperty:
         MaxConcurrentRuns: 1
