@@ -1,0 +1,166 @@
+Open Payments Product-Level Fields 
+1. Overview
+
+This section of the CMS Open Payments dataset captures product information associated with manufacturer payments.
+Each payment record may reference up to five products, represented by repeating field groups (_1 through _5).
+
+These fields support product-level transparency, compliance review, and spending analysis across drugs, biologicals, devices, and medical supplies.
+
+2. Covered_or_Noncovered_Indicator (1–5)
+Description
+
+Indicates whether the referenced product is considered a Covered Product under federal healthcare program rules.
+
+Business Meaning
+Indicator	Definition
+Covered	Product typically requires a prescription or FDA approval and is eligible for reimbursement by federal programs (e.g., Medicare, Medicaid).
+Non-Covered	Product does not meet reimbursement criteria; often over-the-counter or not federally reimbursed.
+Examples
+Indicator	Example Products
+Covered	Cancer drugs, insulin, heart stents
+Non-Covered	OTC vitamins, tongue depressors
+Analytical Importance
+
+Supports regulatory and compliance analysis
+
+Enables comparison of covered vs non-covered promotional spending
+
+Identifies higher-risk payment associations
+
+3. Indicate_Drug_or_Biological_or_Device_or_Medical_Supply (1–5)
+Description
+
+Identifies the type of product associated with the payment.
+
+Observed Distribution (Sample)
+Product Type	Record Count
+Drug	8,527,892
+Device	3,167,252
+Biological	2,393,512
+Medical Supply	86,715
+Null	1,222,253
+Invalid values (e.g., “Covered”, “Yes”)	Minimal
+Observations
+
+Drugs represent the majority of product references.
+
+Null values indicate payments not tied to a specific product.
+
+Invalid categorical values reflect data quality issues.
+
+4. Product_Category_or_Therapeutic_Area (1–5)
+Description
+
+Classifies the product by clinical area or functional category.
+
+Usage
+
+Drugs & Biologicals → Therapeutic Area
+(e.g., Oncology, Cardiology, Endocrinology)
+
+Devices → Product Category
+(e.g., Orthopedics, Surgical Equipment, Cardiac Stents)
+
+Key Characteristics
+
+Free-text values
+
+Mixed upper/lowercase
+
+Inconsistent naming conventions
+
+Analytical Value
+
+Enables spending analysis by therapeutic area
+
+Supports company and product strategy comparisons
+
+Helps identify concentration of payments in specific clinical domains
+
+5. Name_of_Drug_or_Biological_or_Device_or_Medical_Supply (1–5)
+Description
+
+The specific product name associated with the payment.
+
+Importance
+
+Most human-readable and searchable product field
+
+Enables drug-level and device-level tracking
+
+More precise than category-level analysis
+
+Use Cases
+
+Identify top-promoted drugs or devices
+
+Analyze manufacturer spending by individual product
+
+Track promotion trends over time
+
+6. Associated_Drug_or_Biological_NDC (1–5)
+Description
+
+The National Drug Code (NDC) uniquely identifies drug and biological products.
+
+Structure
+
+Labeler – Manufacturer
+
+Product – Strength/formulation
+
+Package – Package size
+
+Analytical Use
+
+Precise drug identification
+
+Integration with FDA and pricing datasets
+
+Brand vs generic analysis
+
+7. Associated_Device_or_Medical_Supply_PDI (1–5)
+Description
+
+The Product Device Identifier (PDI) for devices and medical supplies.
+
+Use
+
+Device-level identification
+
+Manufacturer-specific tracking
+
+Less standardized than NDC but critical for device analysis
+
+8. Program_Year
+Description
+
+The reporting year in which the payment was made.
+
+Use
+
+Year-over-year trend analysis
+
+Policy and market impact assessment
+
+9. Payment
+Description
+
+The monetary value of the payment or transfer of value.
+
+Importance
+
+Core financial metric
+
+Used for aggregation, trend analysis, and compliance review
+
+10. Key Data Considerations
+
+Multiple product columns (1–5) should be normalized (unpivoted) for analysis.
+
+Standardization is required for categorical text fields.
+
+Null and invalid values should be reviewed for data quality remediation.
+
+Status: Documented
+Impact: Enables accurate product-level transparency, compliance monitoring, and analytical reporting
