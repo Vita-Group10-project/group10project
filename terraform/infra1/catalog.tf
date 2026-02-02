@@ -2,10 +2,6 @@ resource "aws_glue_catalog_database" "silver_db" {
   name = "ter_silver_db"
 }
 
-
-# below is for crawler for data in silver
-
-
 resource "aws_glue_crawler" "silver_crawler" {
   name          = "ter-silver-crawler"
   role          = aws_iam_role.glue_role.arn
@@ -28,5 +24,10 @@ resource "aws_glue_crawler" "silver_crawler" {
       }
     }
   })
-}
 
+  # ✅ THIS IS THE IMPORTANT PART
+  lifecycle {
+    prevent_destroy = false
+    create_before_destroy = false
+  }
+}
