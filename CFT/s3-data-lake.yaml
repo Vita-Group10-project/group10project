@@ -8,25 +8,25 @@ Resources:
     Properties:
       BucketName: script-bucket
       VersioningConfiguration:
-        Status: Disabled
+        Status: Suspended
 
   RawZoneBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: raw-zone
       VersioningConfiguration:
-        Status: Disabled
+        Status: Suspended
 
   EnrichBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: enrich-bucket
       VersioningConfiguration:
-        Status: Disabled
+        Status: Suspended
 
   ReportingBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: reporting-zone
       VersioningConfiguration:
-        Status: Disabled
+        Status: Suspended
