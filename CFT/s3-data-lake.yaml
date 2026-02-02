@@ -1,0 +1,75 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Data lake S3 buckets
+
+Resources:
+
+# =========================
+# SCRIPT BUCKET
+# =========================
+  ScriptBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: script-bucket
+      VersioningConfiguration:
+        Status: Disable
+
+  ScriptFolder:
+    Type: AWS::S3::Object
+    Properties:
+      Bucket: !Ref ScriptBucket
+      Key: script/
+
+# =========================
+# RAW ZONE BUCKET
+# =========================
+  RawZoneBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: raw-zone
+      VersioningConfiguration:
+        Status: Disable
+
+  RawFolder:
+    Type: AWS::S3::Object
+    Properties:
+      Bucket: !Ref RawZoneBucket
+      Key: raw-data/
+
+# =========================
+# ENRICH BUCKET
+# =========================
+  EnrichBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: enrich-bucket
+      VersioningConfiguration:
+        Status: Disable
+
+  TransformFolder:
+    Type: AWS::S3::Object
+    Properties:
+      Bucket: !Ref EnrichBucket
+      Key: transformed/
+
+# =========================
+# REPORTING BUCKET
+# =========================
+  ReportingBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: reporting-zone
+      VersioningConfiguration:
+        Status: Disable
+
+Outputs:
+  ScriptBucketName:
+    Value: !Ref ScriptBucket
+
+  RawZoneBucketName:
+    Value: !Ref RawZoneBucket
+
+  EnrichBucketName:
+    Value: !Ref EnrichBucket
+
+  ReportingBucketName:
+    Value: !Ref ReportingBucket
