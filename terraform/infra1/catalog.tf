@@ -1,33 +1,17 @@
+terraform import aws_s3_bucket.bronze ter-raw-zone-sahil
+terraform import aws_s3_bucket.silver ter-enriched-zone-sahil
+terraform import aws_s3_bucket.gold ter-reorting-zone-sahil
+terraform import aws_glue_crawler.silver_crawler ter-silver-crawler
+terraform import aws_glue_catalog_database.silver_db ter_silver_db
+
+
+############################
+# GLUE DATABASE
+############################
 resource "aws_glue_catalog_database" "silver_db" {
   name = "ter_silver_db"
-}
 
-resource "aws_glue_crawler" "silver_crawler" {
-  name          = "ter-silver-crawler"
-  role          = aws_iam_role.glue_role.arn
-  database_name = aws_glue_catalog_database.silver_db.name
-
-  s3_target {
-    path = "ter-enriched-zone-sahil/output/"
-  }
-
-  schema_change_policy {
-    update_behavior = "UPDATE_IN_DATABASE"
-    delete_behavior = "LOG"
-  }
-
-  configuration = jsonencode({
-    Version = 1.0
-    CrawlerOutput = {
-      Tables = {
-        AddOrUpdateBehavior = "MergeNewColumns"
-      }
-    }
-  })
-
-  # ✅ THIS IS THE IMPORTANT PART
   lifecycle {
-    prevent_destroy = false
-    create_before_destroy = false
+    prevent_destroy = true
   }
 }
