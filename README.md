@@ -1,4 +1,4 @@
-<img width="1919" height="921" alt="image" src="https://github.com/user-attachments/assets/7c4f6eba-7f97-4cbb-b2d3-f5c7eeb27c2b" /># group10project
+# group10project
 Open Payments Data Project - BI Dashboard project using cleaned and sampled data for analytics and insights.
 
 
