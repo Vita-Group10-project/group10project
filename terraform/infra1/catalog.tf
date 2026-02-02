@@ -8,7 +8,7 @@ resource "aws_glue_crawler" "silver_crawler" {
   database_name = aws_glue_catalog_database.silver_db.name
 
   s3_target {
-    path = "s3://ter-silver-data-sahil/output/"
+    path = "ter-enriched-zone-sahil/output/"
   }
 
   schema_change_policy {
