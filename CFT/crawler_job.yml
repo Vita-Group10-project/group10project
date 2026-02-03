@@ -70,11 +70,12 @@ Resources:
       TablePrefix: !Ref TablePrefix
 
       SchemaChangePolicy:
-        UpdateBehavior: LOG
-        DeleteBehavior: LOG
+        UpdateBehavior: UPDATE_IN_DATABASE
+        DeleteBehavior: DELETE_FROM_DATABASE
 
       RecrawlPolicy:
-        RecrawlBehavior: CRAWL_NEW_FOLDERS_ONLY
+        RecrawlBehavior: CRAWL_EVERYTHING
+
 
 
       Configuration: |
