@@ -31,6 +31,13 @@ jobs:
       # ==========================================
       # UPLOAD SCRIPT
       # ==========================================
+      - name: Upload ingestion script to S3
+        run: |
+          aws s3 cp script/data_ingest.py s3://glue-etl-script-00/script/gluejob.py
+
+      # ==========================================
+      # UPLOAD SCRIPT
+      # ==========================================
       - name: Upload ETL script to S3
         run: |
           aws s3 cp script/gluejob.py s3://glue-etl-script-00/script/gluejob.py
