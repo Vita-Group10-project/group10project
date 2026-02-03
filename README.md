@@ -1,4 +1,4 @@
-##💊 Open Payments Data Analysis & BI Dashboard Framework
+💊 Open Payments Data Analysis & BI Dashboard Framework
 ---
 📌 Overview
 
@@ -9,7 +9,7 @@ Using Big Data technologies, the project processes large-scale payment records t
 By leveraging distributed data processing frameworks and modern BI tools, the project delivers actionable insights into physician influence, payment composition, and manufacturer benchmarking through interactive dashboards designed for multiple business audiences.
 
 ---
-##🎯 Key Objectives
+🎯 Key Objectives
 
 Collect and process large-scale CMS Open Payments data using Big Data tools
 
@@ -28,7 +28,7 @@ Visualize insights through interactive, audience-specific BI dashboards
 Demonstrate the application of Big Data analytics in healthcare transparency and market intelligence
 
 ---
-##📂 Dataset Information
+📂 Dataset Information
 Source
 
 CMS Open Payments Program
