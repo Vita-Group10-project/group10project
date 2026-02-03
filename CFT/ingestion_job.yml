@@ -27,7 +27,7 @@ Resources:
       Command:
         Name: pythonshell
         PythonVersion: 3
-        ScriptLocation: s3://glue-etl-script-00/script/glue_ingest.py
+        ScriptLocation: s3://glue-etl-script-00/script/data_ingest.py
 
       GlueVersion: "4.0"
       MaxCapacity: 1
