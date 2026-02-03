@@ -57,4 +57,7 @@ payment_type	Nature of payment (Food, Travel, Consulting, etc.)
 product_category	Drug / Device / Biological
 research_flag	Indicates research-related payment
 ownership_interest	Ownership or investment interest
+
+---
 ⚙️ Data Ingestion
+---
