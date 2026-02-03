@@ -31,32 +31,45 @@ Demonstrate the application of Big Data analytics in healthcare transparency and
 📂 Dataset Information
 Source
 ---
+Source: https://openpaymentsdata.cms.gov/dataset/e6b17c6a-2534-4207-a4a1-6746a14911ff
 CMS Open Payments Program
 (Centers for Medicare & Medicaid Services)
 
 Description
-
 The dataset contains detailed records of financial transactions between healthcare manufacturers and physicians, including:
-
 General Payments
-
 Research Payments
-
 Ownership & Investment Interests
-
 These records enable deep analysis of payment behavior, influence patterns, and manufacturer strategies.
 
-🧾 Key Data Attributes
-Column Name	Description
-payment_date	Date of payment transaction
-physician_name	Name of the physician
-physician_specialty	Medical specialty
-manufacturer_name	Paying manufacturer
-payment_amount	Total payment value
-payment_type	Nature of payment (Food, Travel, Consulting, etc.)
-product_category	Drug / Device / Biological
-research_flag	Indicates research-related payment
-ownership_interest	Ownership or investment interest
+| Column Name | Description |
+|-------------|-------------|
+| covered_recipient_type | The type of covered recipient (physician, teaching hospital, etc.) |
+| teaching_hospital_name | Name of the teaching hospital (if applicable) |
+| recipient_city | City where the recipient is located |
+| recipient_country | Country where the recipient is located |
+| recipient_category | Category of recipient (physician, non-physician, etc.) |
+| manufacturer_payment_id | Unique identifier for the payment |
+| manufacturer_payment_name | Name associated with the payment |
+| manufacturer_payment_country | Country of the manufacturer making the payment |
+| total_amount_of_payment_usdollars | Total payment amount in USD |
+| date_of_payment | Date on which payment was made |
+| number_of_payments_included_in_total_amount | Count of individual payments included |
+| form_of_payment | Type of payment format (cash, check, etc.) |
+| nature_of_payment | Nature of the payment (e.g., consulting fee, travel) |
+| record_id | Unique ID for the data record |
+| covered_or_noncovered_indicator | Indicator if the payment is covered or not |
+| medical_product_type | Type of medical product associated with payment |
+| product_category | Category of associated products |
+| medical_product_name | Name of the specific medical product |
+| program_year | Reporting year of the payment |
+| covered_recipient_full_name | Full name of the recipient |
+| recipient_unique_id | Unique identifier for the recipient |
+| recipient_state_final | State of recipient after final normalization |
+| specialty_main | Main specialty of the physician recipient |
+| manufacturer_name_base | Base name of the manufacturer |
+| manufacturer_payment_state | State of manufacturer payment origin |
+
 
 ---
 ⚙️ Data Ingestion
