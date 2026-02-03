@@ -71,7 +71,7 @@ Resources:
 
       SchemaChangePolicy:
         UpdateBehavior: UPDATE_IN_DATABASE
-        DeleteBehavior: DeleteBehavior: DELETE_FROM_DATABASE
+        DeleteBehavior: DELETE_FROM_DATABASE
 
       RecrawlPolicy:
         RecrawlBehavior: CRAWL_EVERYTHING
