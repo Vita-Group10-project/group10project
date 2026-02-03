@@ -3,7 +3,7 @@ from pyspark.context import SparkContext
 from awsglue.context import GlueContext
 from awsglue.utils import getResolvedOptions
 from awsglue.job import Job
-
+from datetime import datetime
 from pyspark.sql.functions import (
     col, trim, lower, when, concat, concat_ws, lit,
     regexp_replace, to_date, initcap, split, create_map
