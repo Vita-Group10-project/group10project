@@ -74,7 +74,7 @@ Resources:
         DeleteBehavior: DELETE_FROM_DATABASE
 
       RecrawlPolicy:
-        RecrawlBehavior: CRAWL_EVERYTHING
+        RecrawlBehavior: CRAWL_NEW_FOLDERS_ONLY
 
       Configuration: |
         {
