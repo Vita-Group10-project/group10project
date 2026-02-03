@@ -417,7 +417,7 @@ for old, new in rename_map.items():
 (
     df_final \
     .write \
-    .mode("overwrite") \
+    .mode("append") \
     .option("header", "true") \
     .csv(OUTPUT_PATH)
 )
