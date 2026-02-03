@@ -14,7 +14,7 @@ Parameters:
 
   TargetPath:
     Type: String
-    Default: s3://enriched-zone-00/transformed_1/
+    Default: s3://enriched-zone-00/transformed_1/run_date=2026-02-03/Program_Year=2024/
     Description: S3 path to enriched transformed data
 
   TablePrefix:
@@ -74,7 +74,7 @@ Resources:
         DeleteBehavior: DELETE_FROM_DATABASE
 
       RecrawlPolicy:
-        RecrawlBehavior: CRAWL_NEW_FOLDERS_ONLY
+        RecrawlBehavior: CRAWL_EVERYTHING
 
       Configuration: |
         {
