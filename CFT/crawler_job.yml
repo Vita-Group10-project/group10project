@@ -14,7 +14,7 @@ Parameters:
 
   TargetPath:
     Type: String
-    Default: s3://enriched-zone-00/transformed/data/
+    Default: s3://enriched-zone-00/transformed_1/data/
     Description: S3 path to enriched transformed data
 
   TablePrefix:
