@@ -418,7 +418,7 @@ run_date = datetime.today().strftime("%Y-%m-%d")
 (
     df_final
     .write
-    .mode("append")
+    .mode("overwrite")
     .partitionBy("Program_Year")   # optional partition
     .parquet(f"{OUTPUT_PATH}/run_date={run_date}")
 )
