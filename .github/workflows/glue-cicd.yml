@@ -29,14 +29,14 @@ jobs:
 
 
       # ==========================================
-      # UPLOAD SCRIPT
+      # UPLOAD Data-Ingestion SCRIPT
       # ==========================================
       - name: Upload ingestion script to S3
         run: |
           aws s3 cp script/data_ingest.py s3://glue-etl-script-00/script/data_ingest.py
 
       # ---------------------------------
-      # Deploy for data-ingestion Glue Job
+      # Deploy for Data-Ingestion Glue Job
       # ---------------------------------
       - name: Deploy CloudFormation
         run: |
@@ -44,6 +44,46 @@ jobs:
             --template-file CFT/ingestion_job.yml \
             --stack-name data-ingestion \
             --capabilities CAPABILITY_NAMED_IAM
+      # ==========================================
+      # START INGESTION GLUE JOB
+      # ==========================================
+      - name: Start Ingestion Glue Job
+        id: start_ingest
+        run: |
+          INGEST_RUN_ID=$(aws glue start-job-run \
+            --job-name data-ingestion \
+            --region us-east-1 \
+            --query 'JobRunId' \
+            --output text)
+
+          echo "INGEST_RUN_ID=$INGEST_RUN_ID" >> $GITHUB_ENV
+
+
+      # ==========================================
+      # WAIT FOR INGESTION JOB FINISH
+      # ==========================================
+      - name: Wait for ingestion completion
+        run: |
+          while true; do
+            STATUS=$(aws glue get-job-run \
+              --job-name data-ingestion \
+              --run-id $INGEST_RUN_ID \
+              --region us-east-1 \
+              --query 'JobRun.JobRunState' \
+              --output text)
+
+            echo "Ingestion status: $STATUS"
+
+            if [ "$STATUS" = "SUCCEEDED" ]; then
+              break
+            fi
+
+            if [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "STOPPED" ]; then
+              exit 1
+            fi
+
+            sleep 30
+          done
 
       # ==========================================
       # UPLOAD SCRIPT
@@ -53,7 +93,7 @@ jobs:
           aws s3 cp script/gluejob.py s3://glue-etl-script-00/script/gluejob.py
 
       # ==========================================
-      # DEPLOY GLUE JOB
+      # DEPLOY GLUE JOB FOR TRANSFORMATION
       # ==========================================
       - name: Deploy Glue Job via CloudFormation
         run: |
@@ -87,7 +127,7 @@ jobs:
 
 
       # ==========================================
-      # WAIT FOR JOB FINISH (IMPORTANT)
+      # WAIT FOR JOB FINISH 
       # ==========================================
       - name: Wait for Glue job completion
         run: |
