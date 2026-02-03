@@ -41,8 +41,8 @@ jobs:
       - name: Deploy CloudFormation
         run: |
           aws cloudformation deploy \
-            --template-file data_ingest.yaml \
-            --stack-name glue-ingestion-stack \
+            --template-file CFT/ingestion_job.yml \
+            --stack-name data-ingestion \
             --capabilities CAPABILITY_NAMED_IAM
 
       # ==========================================
