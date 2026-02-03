@@ -40,8 +40,8 @@ Resources:
         ScriptLocation: s3://glue-etl-script-00/script/glue_ingest.py
 
       GlueVersion: "4.0"
+      WorkerType: G.1X
       NumberOfWorkers: 8
-      MaxCapacity: 1
       Timeout: 480
 
       DefaultArguments:
