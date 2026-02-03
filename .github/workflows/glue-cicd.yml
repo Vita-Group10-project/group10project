@@ -28,12 +28,12 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
 
-      # ==========================================
-      # UPLOAD Data-Ingestion SCRIPT
-      # ==========================================
-      - name: Upload ingestion script to S3
-        run: |
-          aws s3 cp script/data_ingest.py s3://glue-etl-script-00/script/data_ingest.py
+      # # ==========================================
+      # # UPLOAD Data-Ingestion SCRIPT
+      # # ==========================================
+      # - name: Upload ingestion script to S3
+      #   run: |
+      #     aws s3 cp script/data_ingest.py s3://glue-etl-script-00/script/data_ingest.py
 
       # # ---------------------------------
       # # Deploy for Data-Ingestion Glue Job
@@ -92,65 +92,66 @@ jobs:
         run: |
           aws s3 cp script/gluejob.py s3://glue-etl-script-00/script/gluejob.py
 
-      # # ==========================================
-      # # DEPLOY GLUE JOB FOR TRANSFORMATION
-      # # ==========================================
-      # - name: Deploy Glue Job via CloudFormation
-      #   run: |
-      #     aws cloudformation deploy \
-      #       --template-file CFT/glue_job.yml \
-      #       --stack-name glue-creation \
-      #       --capabilities CAPABILITY_NAMED_IAM \
-      #       --parameter-overrides \
-      #         GlueJobName=glueETL \
-      #         ScriptS3Path=s3://glue-etl-script-00/script/gluejob.py \
-      #         WorkerType=G.1X \
-      #         NumberOfWorkers=5 \
-      #         InputPath=s3://raw-zone-00/s3://raw-zone-00/direct/ \
-      #         OutputPath=s3://enriched-zone-00/transformed_1/data/ \
-      #       --region us-east-1
+      # ==========================================
+      # DEPLOY GLUE JOB FOR TRANSFORMATION
+      # ==========================================
+      - name: Deploy Glue Job via CloudFormation
+        run: |
+          aws cloudformation deploy \
+            --template-file CFT/glue_job.yml \
+            --stack-name glue-creation \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameter-overrides \
+              GlueJobName=glueETL \
+              ScriptS3Path=s3://glue-etl-script-00/script/gluejob.py \
+              WorkerType=G.1X \
+              NumberOfWorkers=5 \
+              InputPath=s3://raw-zone-00/s3://raw-zone-00/direct/ \
+              OutputPath=s3://enriched-zone-00/transformed_1/data/ \
+            --region us-east-1
 
 
-      # # ==========================================
-      # # START GLUE JOB + CAPTURE RUN ID
-      # # ==========================================
-      # - name: Start AWS Glue Job
-      #   id: startjob
-      #   run: |
-      #     JOB_RUN_ID=$(aws glue start-job-run \
-      #       --job-name glueETL \
-      #       --region us-east-1 \
-      #       --query 'JobRunId' \
-      #       --output text)
+      # ==========================================
+      # START GLUE JOB + CAPTURE RUN ID
+      # ==========================================
+      - name: Start AWS Glue Job
+        id: startjob
+        run: |
+          JOB_RUN_ID=$(aws glue start-job-run \
+            --job-name glueETL \
+            --region us-east-1 \
+            --query 'JobRunId' \
+            --output text)
 
-      #     echo "JOB_RUN_ID=$JOB_RUN_ID" >> $GITHUB_ENV
+          echo "JOB_RUN_ID=$JOB_RUN_ID" >> $GITHUB_ENV
 
 
-      # # ==========================================
-      # # WAIT FOR JOB FINISH 
-      # # ==========================================
-      # - name: Wait for Glue job completion
-      #   run: |
-      #     while true; do
-      #       STATUS=$(aws glue get-job-run \
-      #         --job-name glueETL \
-      #         --run-id $JOB_RUN_ID \
-      #         --region us-east-1 \
-      #         --query 'JobRun.JobRunState' \
-      #         --output text)
+      # ==========================================
+      # WAIT FOR JOB FINISH 
+      # ==========================================
+      - name: Wait for Glue job completion
+        run: |
+          while true; do
+            STATUS=$(aws glue get-job-run \
+              --job-name glueETL \
+              --run-id $JOB_RUN_ID \
+              --region us-east-1 \
+              --query 'JobRun.JobRunState' \
+              --output text)
 
-      #       echo "Glue status: $STATUS"
+            echo "Glue status: $STATUS"
 
-      #       if [ "$STATUS" = "SUCCEEDED" ]; then
-      #         break
-      #       fi
+            if [ "$STATUS" = "SUCCEEDED" ]; then
+              break
+            fi
 
-      #       if [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "STOPPED" ]; then
-      #         exit 1
-      #       fi
+            if [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "STOPPED" ]; then
+              exit 1
+            fi
 
-      #       sleep 30
-      #     done
+            sleep 30
+          done
+          
       # ==========================================
       # DELETE OLD GLUE TABLE (force recreate)
       # ==========================================
