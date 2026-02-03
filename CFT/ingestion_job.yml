@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Glue ingestion job
+
+Resources:
+
+# =====================================================
+# IAM ROLE FOR GLUE
+# =====================================================
+  GlueRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: glue-ingestion-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: glue.amazonaws.com
+            Action: sts:AssumeRole
+
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+
+
+# =====================================================
+# GLUE PYTHONSHELL JOB
+# =====================================================
+  GlueIngestionJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Name: cms-website-ingestion
+
+      Role: !GetAtt GlueRole.Arn
+
+      Command:
+        Name: pythonshell
+        PythonVersion: 3
+        # script already uploaded from GitHub → S3
+        ScriptLocation: s3://glue-etl-script-00/script/glue_ingest.py
+
+      GlueVersion: "4.0"
+      NumberOfWorkers: 8
+      MaxCapacity: 1
+      Timeout: 480
+
+      DefaultArguments:
+        "--RAW_BUCKET": "raw-zone-00"
+        "--PREFIX": "data/"
+        "--URL": "https://download.cms.gov/openpayments/PGYR2024_P01232026_01102026/OP_DTL_GNRL_PGYR2024_P01232026_01102026.csv"
+        "--job-language": python
+
+
+Outputs:
+  GlueJobName:
+    Value: !Ref GlueIngestionJob
