@@ -28,7 +28,7 @@ job.init(args["JOB_NAME"], args)
 # =====================================================
 # PATHS (S3)
 # =====================================================
-INPUT_PATH = "s3://raw-zone-00/data/OP_DTL_GNRL_PGYR2024_P06302025_06162025.csv"
+INPUT_PATH = "s3://raw-zone-00/direct/"
 OUTPUT_PATH = "s3://enriched-zone-00/transformed_1/"
 
 # =====================================================
@@ -365,55 +365,50 @@ df_final = df.dropna(
 )
 
 rename_map = {
-    "Covered_Recipient_Type": "Covered Recipient Type",
+    "Covered_Recipient_Type": "Covered_Recipient_Type",
 
-    "Teaching_Hospital_Name": "Teaching Hospital Name",
+    "Teaching_Hospital_Name": "Teaching_Hospital_Name",
 
-    "Recipient_City": "Recipient City",
-    "Recipient_Country": "Recipient Country",
-    "Recipient_State_Final": "Recipient State Final",
+    "Recipient_City": "Recipient_City",
+    "Recipient_Country": "Recipient_Country",
+    "Recipient_State_Final": "Recipient_State_Final",
 
-    "Covered_Recipient_Primary_Type_1": "Recipient Category",
+    "Covered_Recipient_Primary_Type_1": "Recipient_Category",
 
-    "Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_ID": "Manufacturer Payment Id",
-    "Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_Name": "Manufacturer Payment Name",
-    "Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_Country": "Manufacturer Payment Country",
-    "Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_State_Full": "Manufacturer Payment State",
+    "Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_ID": "Manufacturer_Payment_Id",
+    "Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_Name": "Manufacturer_Payment_Name",
+    "Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_Country": "Manufacturer_Payment_Country",
+    "Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_State_Full": "Manufacturer_Payment_State",
 
-    "Manufacturer_name_base": "Manufacturer Name Base",
+    "Manufacturer_name_base": "Manufacturer_Name_Base",
 
-    "Total_Amount_of_Payment_USDollars": "Total Amount Of Payment Usdollars",
-    "Number_of_Payments_Included_in_Total_Amount": "Number Of Payments Included In Total Amount",
-    "Date_of_Payment": "Date Of Payment",
+    "Total_Amount_of_Payment_USDollars": "Total_Amount_Of_Payment_Usdollars",
+    "Number_of_Payments_Included_in_Total_Amount": "Number_Of_Payments_Included_In_Total_Amount",
+    "Date_of_Payment": "Date_Of_Payment",
 
-    "Form_of_Payment_or_Transfer_of_Value": "Form Of Payment",
-    "Nature_of_Payment_or_Transfer_of_Value": "Nature Of Payment",
+    "Form_of_Payment_or_Transfer_of_Value": "Form_Of_Payment",
+    "Nature_of_Payment_or_Transfer_of_Value": "Nature_Of_Payment",
 
-    "Covered_or_Noncovered_Indicator_1": "Covered Or Noncovered Indicator",
+    "Covered_or_Noncovered_Indicator_1": "Covered_Or_Noncovered_Indicator",
 
-    "Indicate_Drug_or_Biological_or_Device_or_Medical_Supply_1": "Medical Product Type",
-    "Product_Category_or_Therapeutic_Area_1": "Product Category",
-    "Name_of_Drug_or_Biological_or_Device_or_Medical_Supply_1": "Medical Product Name",
+    "Indicate_Drug_or_Biological_or_Device_or_Medical_Supply_1": "Medical_Product_Type",
+    "Product_Category_or_Therapeutic_Area_1": "Product_Category",
+    "Name_of_Drug_or_Biological_or_Device_or_Medical_Supply_1": "Medical_Product_Name",
 
-    "Program_Year": "Program Year",
+    "Program_Year": "Program_Year",
 
-    "Covered_Recipient_Full_Name": "Covered Recipient Full Name",
-    "Recipient_Unique_ID": "Recipient Unique Id",
+    "Covered_Recipient_Full_Name": "Covered_Recipient_Full_Name",
+    "Recipient_Unique_ID": "Recipient_Unique_Id",
 
-    "Specialty_Main": "Specialty Main",
+    "Specialty_Main": "Specialty_Main",
 
-    "Record_ID": "Record Id"
+    "Record_ID": "Record_Id"
 }
+
 
 for old, new in rename_map.items():
     if old in df_final.columns:
         df_final = df_final.withColumnRenamed(old, new)
-
-df_final = df_final.select([
-    col(c).alias(c.replace(" ", "_"))
-    for c in df_final.columns
-])
-
 
 
 # =====================================================
