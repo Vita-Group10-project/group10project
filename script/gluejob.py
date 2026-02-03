@@ -415,10 +415,9 @@ for old, new in rename_map.items():
 # WRITE SILVER (CSV)
 # =====================================================
 (
-    df_final \
-    .write \
-    .mode("append") \
-    .option("header", "true") \
-    .csv(OUTPUT_PATH)
+    df_final
+    .write
+    .mode("append")
+    .partitionBy("Program_Year")   # optional partition
+    .parquet(f"{OUTPUT_PATH}/run_date={run_date}")
 )
-job.commit()
