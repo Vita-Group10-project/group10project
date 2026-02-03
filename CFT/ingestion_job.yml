@@ -1,23 +1,38 @@
-GlueIngestionJob:
-  Type: AWS::Glue::Job
-  Properties:
+AWSTemplateFormatVersion: '2010-09-09'
+Description: data-ingestion
 
-    Name: cms-website-ingestion
-    Role: !GetAtt GlueRole.Arn
+Resources:
 
-    Command:
-      Name: glueetl          # ⭐ MUST BE glueetl
-      ScriptLocation: s3://glue-etl-script-00T/script/glue_ingest.py
-      PythonVersion: 3
+  GlueRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: glue.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
 
-    GlueVersion: "4.0"
 
-    WorkerType: G.1X
-    NumberOfWorkers: 8
-    Timeout: 480
+  GlueIngestionJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Name: cms-website-ingestion
+      Role: !GetAtt GlueRole.Arn
 
-    DefaultArguments:
-      "--RAW_BUCKET": "raw-zone-00"
-      "--PREFIX": "data/"
-      "--URL": "https://download.cms.gov/openpayments/PGYR2024_P01232026_01102026/OP_DTL_GNRL_PGYR2024_P01232026_01102026.csv"
-      "--job-language": python
+      Command:
+        Name: pythonshell
+        PythonVersion: 3
+        ScriptLocation: s3://glue-etl-script-00/script/glue_ingest.py
+
+      GlueVersion: "4.0"
+      MaxCapacity: 1
+
+      DefaultArguments:
+        "--RAW_BUCKET": "raw-zone-00"
+        "--URL": "https://download.cms.gov/openpayments/PGYR2024_P01232026_01102026/OP_DTL_GNRL_PGYR2024_P01232026_01102026.csv"
+        "--job-language": python
