@@ -72,11 +72,11 @@ Resources:
 
       # ✅ FIXED SETTINGS (Glue required combo)
       SchemaChangePolicy:
-        UpdateBehavior: LOG
+        UpdateBehavior: UPDATE_IN_DATABASE
         DeleteBehavior: LOG
 
       RecrawlPolicy:
-        RecrawlBehavior: CRAWL_NEW_FOLDERS_ONLY
+        RecrawlBehavior: CRAWL_EVERYTHING
 
       Configuration: |
         {
