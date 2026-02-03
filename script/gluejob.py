@@ -28,7 +28,7 @@ job.init(args["JOB_NAME"], args)
 # =====================================================
 # PATHS (S3)
 # =====================================================
-INPUT_PATH = "s3://raw-zone-00/direct/"
+INPUT_PATH = "s3://raw-zone-00/direct/2026/02/03/data.csv"
 OUTPUT_PATH = "s3://enriched-zone-00/transformed_1/"
 
 # =====================================================
