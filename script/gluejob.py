@@ -415,9 +415,10 @@ for old, new in rename_map.items():
 # WRITE SILVER (CSV)
 # =====================================================
 (
-    df_final
-        .write
-        .mode("append")        
-        .parquet(OUTPUT_PATH)
+    df_final \
+    .write \
+    .mode("overwrite") \
+    .option("header", "true") \
+    .csv(OUTPUT_PATH)
 )
 job.commit()
