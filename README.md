@@ -42,9 +42,11 @@ Research Payments
 Ownership & Investment Interests
 These records enable deep analysis of payment behavior, influence patterns, and manufacturer strategies.
 
+### 🧹 Columns After Clean and Transform :
+
 | Column Name | Description |
 |-------------|-------------|
-| covered_recipient_type | The type of covered recipient (physician, teaching hospital, etc.) |
+| covered_recipient_type | The type of covered recipient (physician, Non-physician) |
 | teaching_hospital_name | Name of the teaching hospital (if applicable) |
 | recipient_city | City where the recipient is located |
 | recipient_country | Country where the recipient is located |
@@ -55,7 +57,7 @@ These records enable deep analysis of payment behavior, influence patterns, and 
 | total_amount_of_payment_usdollars | Total payment amount in USD |
 | date_of_payment | Date on which payment was made |
 | number_of_payments_included_in_total_amount | Count of individual payments included |
-| form_of_payment | Type of payment format (cash, check, etc.) |
+| form_of_payment | Type of payment format (cash, check, etc ) |
 | nature_of_payment | Nature of the payment (e.g., consulting fee, travel) |
 | record_id | Unique ID for the data record |
 | covered_or_noncovered_indicator | Indicator if the payment is covered or not |
