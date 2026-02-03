@@ -22,7 +22,7 @@ Parameters:
   OutputPath:
     Type: String
     Description: Default transformed output path
-    Default: s3://enriched-zone-00/transformed/data/
+    Default: s3://enriched-zone-00/transformed_1/
     
   WorkerType:
     Type: String
