@@ -33,7 +33,7 @@ jobs:
       # ==========================================
       - name: Upload ingestion script to S3
         run: |
-          aws s3 cp script/data_ingest.py s3://glue-etl-script-00/script/gluejob.py
+          aws s3 cp script/data_ingest.py s3://glue-etl-script-00/script/data_ingest.py
 
       # ---------------------------------
       # Deploy for data-ingestion Glue Job
@@ -41,7 +41,7 @@ jobs:
       - name: Deploy CloudFormation
         run: |
           aws cloudformation deploy \
-            --template-file glue-job.yaml \
+            --template-file data_ingest.yaml \
             --stack-name glue-ingestion-stack \
             --capabilities CAPABILITY_NAMED_IAM
 
