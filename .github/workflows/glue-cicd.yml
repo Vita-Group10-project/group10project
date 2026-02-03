@@ -151,6 +151,14 @@ jobs:
 
             sleep 30
           done
+      # ==========================================
+      # DELETE OLD GLUE TABLE (force recreate)
+      # ==========================================
+      - name: Delete old Glue table
+        run: |
+          aws glue delete-table \
+            --database-name enrich \
+            --name enrich_transformed || true
 
 
      # Deploy crawler stack
