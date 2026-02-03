@@ -28,8 +28,6 @@ variable "key_name" {
 
 variable "instance_type" {
   type = string
-  # ✅ Free tier would be: t3.micro
-  # For 9GB file: better is t3.large (paid)
   default = "c7i-flex.large"
 }
 
