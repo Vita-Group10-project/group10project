@@ -152,42 +152,4 @@ jobs:
             sleep 30
           done
           
-      # ==========================================
-      # DELETE OLD GLUE TABLE (force recreate)
-      # ==========================================
-      - name: Delete old Glue table
-        run: |
-          aws glue delete-table \
-            --database-name enrich \
-            --name enrich_data || true
-
-
-     # Deploy crawler stack
-      - name: Deploy Crawler Stack
-        run: |
-          aws cloudformation deploy \
-            --template-file CFT/crawler_job.yml \
-            --stack-name my-crawler \
-            --capabilities CAPABILITY_NAMED_IAM
-
-      # Start crawler
-      - name: Start Crawler
-        run: |
-          aws glue start-crawler --name enrich-transformed-crawler
-
-      # Wait for crawler
-      - name: Wait for crawler completion
-        run: |
-          while true; do
-            STATUS=$(aws glue get-crawler \
-              --name enrich-transformed-crawler \
-              --query 'Crawler.State' \
-              --output text)
-
-            if [ "$STATUS" = "READY" ]; then
-              break
-            fi
-
-            sleep 30
-          done
-
+      
