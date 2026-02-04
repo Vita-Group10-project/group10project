@@ -243,7 +243,7 @@ resource "aws_instance" "cms_ec2" {
 
     s3 = boto3.client("s3")
 
-    print("✅ Downloading CMS file and uploading to S3...")
+    print("✅ Downloading CMS file and uploading to S3....")
     response = requests.get(url, stream=True, timeout=1800)
     response.raise_for_status()
 
