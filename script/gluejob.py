@@ -3,12 +3,12 @@ from pyspark.context import SparkContext
 from awsglue.context import GlueContext
 from awsglue.utils import getResolvedOptions
 from awsglue.job import Job
-from datetime import datetime
 from pyspark.sql.functions import (
     col, trim, lower, when, concat, concat_ws, lit,
     regexp_replace, to_date, initcap, split, create_map
 )
-from pyspark.sql.types import DoubleType, IntegerType
+from pyspark.sql.types import DoubleType, IntegerType, LongType
+
 # =====================================================
 # GLUE CONTEXT
 # =====================================================
@@ -18,18 +18,17 @@ spark = glueContext.spark_session
 
 spark.conf.set("spark.sql.parquet.datetimeRebaseModeInWrite", "LEGACY")
 spark.conf.set("spark.sql.parquet.int96RebaseModeInWrite", "LEGACY")
+
 # =====================================================
-# JOB PARAMETERS (OPTIONAL BUT RECOMMENDED)
+# JOB PARAMETERS (ONLY FROM GLUE PARAMETERS)
 # =====================================================
 args = getResolvedOptions(sys.argv, ["JOB_NAME", "INPUT_PATH", "OUTPUT_PATH"])
 
 job = Job(glueContext)
 job.init(args["JOB_NAME"], args)
-# =====================================================
-# PATHS (S3)
-# =====================================================
-INPUT_PATH = "s3://raw-zone-00/direct/2026/02/03/data.csv"
-OUTPUT_PATH = "s3://enriched-zone-00/transformed_1/"
+
+INPUT_PATH = args["INPUT_PATH"]
+OUTPUT_PATH = args["OUTPUT_PATH"]
 
 # =====================================================
 # READ BRONZE (CSV OR PARQUET)
@@ -45,6 +44,7 @@ if INPUT_PATH.lower().endswith(".csv"):
     )
 else:
     df = spark.read.parquet(INPUT_PATH)
+
 # =====================================================
 # DROP EARLY NOISE COLUMNS
 # =====================================================
@@ -92,8 +92,6 @@ cols_to_drop_early = [
     "Related_Product_Indicator",
     "Payment_Publication_Date",
 
-     
-
     "Associated_Drug_or_Biological_NDC_1",
     "Associated_Device_or_Medical_Supply_PDI_1",
     "Associated_Drug_or_Biological_NDC_2",
@@ -137,11 +135,11 @@ def capitalize_first_letter(col_name: str) -> str:
         return col_name
     return col_name[0].upper() + col_name[1:]
 
-df = df.select([
-    col(c).alias(capitalize_first_letter(c))
-    for c in df.columns
-])
+df = df.select([col(c).alias(capitalize_first_letter(c)) for c in df.columns])
 
+# =====================================================
+# US STATE FULL NAME MAP
+# =====================================================
 us_state_map = {
     "AL":"Alabama","AK":"Alaska","AZ":"Arizona","AR":"Arkansas","CA":"California","CO":"Colorado",
     "CT":"Connecticut","DE":"Delaware","FL":"Florida","GA":"Georgia","HI":"Hawaii","ID":"Idaho",
@@ -155,9 +153,7 @@ us_state_map = {
     "WI":"Wisconsin","WY":"Wyoming","DC":"District of Columbia","PR":"Puerto Rico"
 }
 
-mapping_expr = create_map(
-    *[lit(x) for kv in us_state_map.items() for x in kv]
-)
+mapping_expr = create_map(*[lit(x) for kv in us_state_map.items() for x in kv])
 
 # =====================================================
 # NORMALIZE FAKE NULLS → REAL NULLS
@@ -165,10 +161,7 @@ mapping_expr = create_map(
 NULL_LIKE = ["", " ", "NA", "N/A", "NULL", "null"]
 
 def normalize_null(column_name):
-    return when(
-        trim(col(column_name)).isin(NULL_LIKE),
-        None
-    ).otherwise(col(column_name))
+    return when(trim(col(column_name)).isin(NULL_LIKE), None).otherwise(col(column_name))
 
 critical_cols = [
     "Name_of_Drug_or_Biological_or_Device_or_Medical_Supply_1",
@@ -187,21 +180,25 @@ for c in critical_cols:
 # =====================================================
 # PHYSICIAN FULL NAME
 # =====================================================
-df = (
-    df.withColumn(
-        "Covered_Recipient_Full_Name",
-        concat_ws(
-            " ",
-            trim(col("Covered_Recipient_First_Name")),
-            trim(col("Covered_Recipient_Last_Name"))
-        )
+df = df.withColumn(
+    "Covered_Recipient_Full_Name",
+    concat_ws(
+        " ",
+        trim(col("Covered_Recipient_First_Name")),
+        trim(col("Covered_Recipient_Last_Name"))
     )
-    .drop(
+)
+
+cols_to_drop = [
+    c for c in [
         "Covered_Recipient_First_Name",
         "Covered_Recipient_Middle_Name",
         "Covered_Recipient_Last_Name"
-    )
-)
+    ]
+    if c in df.columns
+]
+
+df = df.drop(*cols_to_drop)
 
 # =====================================================
 # CREATE UNIQUE RECIPIENT ID
@@ -216,21 +213,15 @@ df = df.withColumn(
     )
 )
 
-# 🔥 DROP SOURCE IDS IMMEDIATELY (EXPLICIT & GUARANTEED)
-df = df.drop(
-    "Teaching_Hospital_ID",
-    "Covered_Recipient_Profile_ID"
-)
+df = df.drop("Teaching_Hospital_ID", "Covered_Recipient_Profile_ID")
 
 # =====================================================
 # FILL HOSPITAL NAME
 # =====================================================
 df = df.withColumn(
     "Teaching_Hospital_Name",
-    when(
-        col("Teaching_Hospital_Name").isNull(),
-        lit("Not a Hospital")
-    ).otherwise(col("Teaching_Hospital_Name"))
+    when(col("Teaching_Hospital_Name").isNull(), lit("Not a Hospital"))
+    .otherwise(col("Teaching_Hospital_Name"))
 )
 
 # =====================================================
@@ -238,23 +229,16 @@ df = df.withColumn(
 # =====================================================
 df = df.withColumn(
     "Covered_Recipient_Primary_Type_1",
-    when(
-        col("Covered_Recipient_Primary_Type_1").isNull(),
-        lit("Hospital")
-    ).otherwise(col("Covered_Recipient_Primary_Type_1"))
+    when(col("Teaching_Hospital_Name") != "Not a Hospital", "Hospital")
+    .otherwise("Physician")
 )
-
 
 # =====================================================
 # DATA TYPE FIXES
 # =====================================================
 df = df.withColumn(
     "Total_Amount_of_Payment_USDollars",
-    regexp_replace(
-        col("Total_Amount_of_Payment_USDollars"),
-        "[$,]",
-        ""
-    ).cast(DoubleType())
+    regexp_replace(col("Total_Amount_of_Payment_USDollars"), "[$,]", "").cast(DoubleType())
 )
 
 df = df.withColumn(
@@ -267,38 +251,41 @@ df = df.withColumn(
     to_date(col("Date_of_Payment"), "MM/dd/yyyy")
 )
 
-
-
 # =====================================================
 # CITY & SPECIALTY
 # =====================================================
-
 df = df.withColumn(
     "Recipient_State_Final",
     when(
         trim(col("Recipient_Country")) == "United States",
         mapping_expr.getItem(trim(col("Recipient_State")))
     ).otherwise(trim(col("Recipient_Country")))
-)
+).drop("Recipient_State")
 
-df = df.drop("Recipient_State")
+df = df.withColumn("Recipient_City", initcap(trim(col("Recipient_City"))))
 
 df = df.withColumn(
-    "Recipient_City",
-    initcap(trim(col("Recipient_City")))
+    "Specialty_Main",
+    when(
+        col("Covered_Recipient_Specialty_1").rlike("\\|.+"),
+        trim(split(col("Covered_Recipient_Specialty_1"), "\\|")[1])
+    ).otherwise(
+        trim(col("Covered_Recipient_Specialty_1"))
+    )
 )
 
 df = df.withColumn(
     "Specialty_Main",
-    trim(split(col("Covered_Recipient_Specialty_1"), "\\|")[1])
-).drop("Covered_Recipient_Specialty_1")
+    when(trim(col("Specialty_Main")) == "", None)
+    .otherwise(col("Specialty_Main"))
+)
 
+df = df.drop("Covered_Recipient_Specialty_1")
 df = df.dropna(subset=["Specialty_Main"])
 
 # =====================================================
 # MANUFACTURER NORMALIZATION
 # =====================================================
-
 df = df.withColumn(
     "manufacturer_name_base",
     lower(trim(col("Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_Name")))
@@ -323,35 +310,20 @@ df = df.withColumn(
     trim(regexp_replace(col("manufacturer_name_base"), "\\s+", " "))
 )
 
-df = df.withColumn(
-    "manufacturer_name_base",
-    initcap(col("manufacturer_name_base"))
-)
+df = df.withColumn("manufacturer_name_base", initcap(col("manufacturer_name_base")))
 
-df = df.withColumnRenamed(
-    "manufacturer_name_base",
-    "Manufacturer_name_base"
-)
+df = df.withColumnRenamed("manufacturer_name_base", "Manufacturer_name_base")
 
 # =====================================================
 # MANUFACTURER STATE NORMALIZATION
 # =====================================================
-
-# Executor-safe Spark map expression
-
 df = df.withColumn(
     "Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_State_Full",
     when(
         trim(col("Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_Country")) == "United States",
-        mapping_expr.getItem(
-            trim(col("Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_State"))
-        )
-    ).otherwise(
-        col("Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_State")
-    )
-)
-
-df = df.drop("Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_State")
+        mapping_expr.getItem(trim(col("Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_State")))
+    ).otherwise(col("Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_State"))
+).drop("Applicable_Manufacturer_or_Applicable_GPO_Making_Payment_State")
 
 # =====================================================
 # FINAL QUALITY FILTER (NO NULL ROWS)
@@ -364,9 +336,11 @@ df_final = df.dropna(
     ]
 )
 
+# =====================================================
+# RENAME COLUMNS
+# =====================================================
 rename_map = {
     "Covered_Recipient_Type": "Covered_Recipient_Type",
-
     "Teaching_Hospital_Name": "Teaching_Hospital_Name",
 
     "Recipient_City": "Recipient_City",
@@ -405,14 +379,27 @@ rename_map = {
     "Record_ID": "Record_Id"
 }
 
-
 for old, new in rename_map.items():
     if old in df_final.columns:
         df_final = df_final.withColumnRenamed(old, new)
 
+# =====================================================
+# ✅ CAST Manufacturer_Payment_Id and Record_Id to BIGINT
+# =====================================================
+if "Manufacturer_Payment_Id" in df_final.columns:
+    df_final = df_final.withColumn(
+        "Manufacturer_Payment_Id",
+        col("Manufacturer_Payment_Id").cast(LongType())
+    )
+
+if "Record_Id" in df_final.columns:
+    df_final = df_final.withColumn(
+        "Record_Id",
+        col("Record_Id").cast(LongType())
+    )
 
 # =====================================================
-# WRITE SILVER (CSV)
+# WRITE SILVER (PARQUET)
 # =====================================================
 (
     df_final
@@ -420,3 +407,5 @@ for old, new in rename_map.items():
     .mode("overwrite")
     .parquet(OUTPUT_PATH)
 )
+
+job.commit()
