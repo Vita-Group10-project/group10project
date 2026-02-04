@@ -401,11 +401,15 @@ if "Record_Id" in df_final.columns:
 # =====================================================
 # WRITE SILVER (PARQUET)
 # =====================================================
+from datetime import datetime
+
+run_date = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+
 (
     df_final
     .write
-    .mode("overwrite")
-    .parquet(OUTPUT_PATH)
+    .mode("append")
+    .parquet(f"{OUTPUT_PATH}/run={run_date}")
 )
 
 job.commit()
