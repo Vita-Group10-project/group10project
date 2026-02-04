@@ -30,7 +30,7 @@ Resources:
         ScriptLocation: s3://glue-etl-script-00/script/data_ingest.py
 
       GlueVersion: "4.0"
-      MaxCapacity: 1
+      MaxCapacity: 5
 
       DefaultArguments:
         "--RAW_BUCKET": "raw-zone-00"
