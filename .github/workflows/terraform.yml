@@ -1,0 +1,101 @@
+name: Glue-ETL-Pipeline-Terraform
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - script/gluejob.py
+      - terraform/**
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # ==========================================
+      # Checkout
+      # ==========================================
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      # ==========================================
+      # AWS AUTH
+      # ==========================================
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+
+      # ==========================================
+      # Install Terraform
+      # ==========================================
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+
+      # ==========================================
+      # Upload ETL Script to S3
+      # ==========================================
+      - name: Upload ETL script to S3
+        run: |
+          aws s3 cp script/gluejob.py s3://glue-etl-script-00/script/gluejob.py
+
+
+      # ==========================================
+      # Terraform Deploy Glue Job
+      # ==========================================
+      - name: Terraform Apply (Glue Job)
+        working-directory: terraform/glue_job
+        run: |
+          terraform init
+          terraform apply -auto-approve
+
+
+      # ==========================================
+      # Start Glue Job
+      # ==========================================
+      - name: Start Glue Job
+        id: startjob
+        run: |
+          JOB_RUN_ID=$(aws glue start-job-run \
+            --job-name glueETL \
+            --query 'JobRunId' \
+            --output text)
+
+          echo "JOB_RUN_ID=$JOB_RUN_ID" >> $GITHUB_ENV
+
+
+      # ==========================================
+      # Wait for Glue Job completion
+      # ==========================================
+      - name: Wait for Glue Job
+        run: |
+          while true; do
+            STATUS=$(aws glue get-job-run \
+              --job-name glueETL \
+              --run-id $JOB_RUN_ID \
+              --query 'JobRun.JobRunState' \
+              --output text)
+
+            echo "Glue status: $STATUS"
+
+            if [ "$STATUS" = "SUCCEEDED" ]; then
+              break
+            fi
+
+            if [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "STOPPED" ]; then
+              exit 1
+            fi
+
+            sleep 30
+          done
+
+
+     
