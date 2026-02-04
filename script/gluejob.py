@@ -384,6 +384,27 @@ for old, new in rename_map.items():
         df_final = df_final.withColumnRenamed(old, new)
 
 # =====================================================
+# REMOVE NULL ROWS FROM Manufacturer_Payment_State
+# =====================================================
+if "Manufacturer_Payment_State" in df_final.columns:
+    df_final = df_final.withColumn(
+        "Manufacturer_Payment_State",
+        normalize_null("Manufacturer_Payment_State")
+    )
+
+    df_final = df_final.dropna(subset=["Manufacturer_Payment_State"])
+
+
+if "recipient_state_final" in df_final.columns:
+    df_final = df_final.withColumn(
+        "recipient_state_final",
+        normalize_null("recipient_state_final")
+    )
+
+    df_final = df_final.dropna(subset=["recipient_state_final"])
+
+
+# =====================================================
 # ✅ CAST Manufacturer_Payment_Id and Record_Id to BIGINT
 # =====================================================
 if "Manufacturer_Payment_Id" in df_final.columns:
@@ -397,19 +418,34 @@ if "Record_Id" in df_final.columns:
         "Record_Id",
         col("Record_Id").cast(LongType())
     )
-
+# ✅ Program_Year -> INT
+if "Program_Year" in df_final.columns:
+    df_final = df_final.withColumn(
+        "Program_Year",
+        col("Program_Year").cast(IntegerType())
+    )
 # =====================================================
 # WRITE SILVER (PARQUET)
 # =====================================================
-from datetime import datetime
-
-run_date = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-
 (
     df_final
     .write
-    .mode("append")
-    .parquet(f"{OUTPUT_PATH}/run={run_date}")
+    .mode("overwrite")
+    .parquet(OUTPUT_PATH)
 )
 
 job.commit()
+
+
+import boto3
+
+s3 = boto3.client("s3")
+
+bucket = "enriched-zone-00"
+prefix = "tranformed_for_iceBerg/"
+success_key = prefix + "_SUCCESS"
+
+# create empty success file
+s3.put_object(Bucket=bucket, Key=success_key, Body=b"")
+print(f"✅ Created marker file: s3://{bucket}/{success_key}")
+
