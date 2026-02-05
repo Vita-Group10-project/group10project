@@ -1,53 +1,28 @@
-############################################################
-# S3 BUCKETS (EXISTING → PASSED FROM CICD)
-############################################################
+#########################################################
+# BUCKET NAMES (passed from GitHub Actions)
+#########################################################
 
 variable "bronze_bucket_name" {
-  description = "Raw/Bronze ingestion bucket (existing)"
+  description = "Raw/Bronze bucket name"
   type        = string
 }
 
 variable "silver_bucket_name" {
-  description = "Enriched/Silver bucket (existing)"
+  description = "Silver/Enriched bucket name"
   type        = string
 }
 
 variable "gold_bucket_name" {
-  description = "Reporting/Gold bucket (existing)"
+  description = "Gold/Reporting bucket name"
   type        = string
 }
 
-############################################################
-# INGEST CONFIG
-############################################################
+
+#########################################################
+# CMS SOURCE FILE
+#########################################################
 
 variable "cms_url" {
-  description = "Public CMS download URL"
+  description = "CMS download URL"
   type        = string
-}
-
-variable "instance_type" {
-  description = "EC2 instance type for ingestion job"
-  type        = string
-  default     = "t3.micro"   # safe + cheap
-}
-
-############################################################
-# OPTIONAL PROJECT TAGGING
-############################################################
-
-variable "project_name" {
-  description = "Project name prefix for tagging"
-  type        = string
-  default     = "cms-ingestion"
-}
-
-############################################################
-# REGION (optional override)
-############################################################
-
-variable "aws_region" {
-  description = "AWS region"
-  type        = string
-  default     = "us-east-1"
 }
