@@ -17,7 +17,7 @@ provider "aws" {
 # VARIABLES
 # =========================================================
 variable "bucket_name" {
-  default = "raw-data-main"
+  default = "cms-raw-data"
 }
 
 variable "cms_url" {
