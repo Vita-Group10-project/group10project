@@ -1,5 +1,5 @@
 ############################################################
-# PROVIDER
+# TERRAFORM + PROVIDER
 ############################################################
 terraform {
   required_version = ">= 1.3.0"
@@ -17,7 +17,20 @@ provider "aws" {
 }
 
 ############################################################
-# DEFAULT VPC (NO LIMIT / NO CUSTOM NETWORK NEEDED)
+# VARIABLES (passed from GitHub Actions)
+############################################################
+variable "bronze_bucket_name" { type = string }
+variable "silver_bucket_name" { type = string }
+variable "gold_bucket_name"   { type = string }
+variable "cms_url"            { type = string }
+
+variable "instance_type" {
+  type    = string
+  default = "t3.micro"   # ✅ Free tier safe
+}
+
+############################################################
+# USE DEFAULT VPC (avoid VPC limits)
 ############################################################
 data "aws_vpc" "default" {
   default = true
@@ -31,13 +44,12 @@ data "aws_subnets" "default" {
 }
 
 ############################################################
-# SECURITY GROUP (OUTBOUND ONLY FOR DOWNLOAD + S3)
+# SECURITY GROUP (OUTBOUND ONLY)
 ############################################################
 resource "aws_security_group" "ec2_sg" {
   name_prefix = "cms-ingest-sg-"
   vpc_id      = data.aws_vpc.default.id
 
-  # Only outbound required
   egress {
     from_port   = 0
     to_port     = 0
@@ -47,7 +59,69 @@ resource "aws_security_group" "ec2_sg" {
 }
 
 ############################################################
-# AMAZON LINUX 2 AMI
+# IAM ROLE FOR EC2 (REQUIRED FOR S3 UPLOAD)
+############################################################
+resource "aws_iam_role" "role" {
+  name_prefix = "cms-ingest-role-"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Principal = { Service = "ec2.amazonaws.com" },
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+############################################################
+# S3 + TERMINATE POLICY
+############################################################
+resource "aws_iam_policy" "policy" {
+  name_prefix = "cms-ingest-policy-"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ],
+        Resource = [
+          "arn:aws:s3:::${var.bronze_bucket_name}",
+          "arn:aws:s3:::${var.bronze_bucket_name}/*"
+        ]
+      },
+
+      {
+        Effect = "Allow",
+        Action = [
+          "ec2:TerminateInstances",
+          "ec2:DescribeInstances"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach" {
+  role       = aws_iam_role.role.name
+  policy_arn = aws_iam_policy.policy.arn
+}
+
+resource "aws_iam_instance_profile" "profile" {
+  name_prefix = "cms-profile-"
+  role        = aws_iam_role.role.name
+}
+
+############################################################
+# AMAZON LINUX AMI
 ############################################################
 data "aws_ami" "amazon_linux" {
   most_recent = true
@@ -61,7 +135,6 @@ data "aws_ami" "amazon_linux" {
 
 ############################################################
 # EC2 INGESTION INSTANCE
-# Downloads CMS file → uploads to Bronze bucket → self-terminate
 ############################################################
 resource "aws_instance" "cms_ingest" {
 
@@ -69,7 +142,6 @@ resource "aws_instance" "cms_ingest" {
   instance_type          = var.instance_type
   subnet_id              = data.aws_subnets.default.ids[0]
   vpc_security_group_ids = [aws_security_group.ec2_sg.id]
-
   iam_instance_profile   = aws_iam_instance_profile.profile.name
 
   root_block_device {
@@ -77,9 +149,6 @@ resource "aws_instance" "cms_ingest" {
     volume_type = "gp3"
   }
 
-  ##########################################################
-  # USER DATA SCRIPT
-  ##########################################################
   user_data = <<-EOF
 #!/bin/bash
 set -e
@@ -104,7 +173,7 @@ r.raise_for_status()
 
 boto3.client("s3").upload_fileobj(r.raw, bucket, key)
 
-print("Uploaded to:", f"s3://{bucket}/{key}")
+print("Uploaded:", f"s3://{bucket}/{key}")
 PY
 
 python3 /tmp/ingest.py
