@@ -1,29 +1,53 @@
-variable "glue_job_name" {
+############################################################
+# S3 BUCKETS (EXISTING → PASSED FROM CICD)
+############################################################
+
+variable "bronze_bucket_name" {
+  description = "Raw/Bronze ingestion bucket (existing)"
   type        = string
-  description = "AWS Glue job name"
-  default     = "ter-bronze-to-silver-job"
 }
 
-variable "glue_script_s3_path" {
+variable "silver_bucket_name" {
+  description = "Enriched/Silver bucket (existing)"
   type        = string
-  description = "S3 path of Glue ETL script"
-  default     = "s3://ter-bronze-data-sahil/scripts/bronze_to_silver.py"
 }
 
-variable "glue_version" {
+variable "gold_bucket_name" {
+  description = "Reporting/Gold bucket (existing)"
   type        = string
-  description = "Glue version"
-  default     = "4.0"
 }
 
-variable "worker_type" {
+############################################################
+# INGEST CONFIG
+############################################################
+
+variable "cms_url" {
+  description = "Public CMS download URL"
   type        = string
-  description = "Glue worker type"
-  default     = "G.1X"
 }
 
-variable "number_of_workers" {
-  type        = number
-  description = "Number of Glue workers"
-  default     = 2
+variable "instance_type" {
+  description = "EC2 instance type for ingestion job"
+  type        = string
+  default     = "t3.micro"   # safe + cheap
+}
+
+############################################################
+# OPTIONAL PROJECT TAGGING
+############################################################
+
+variable "project_name" {
+  description = "Project name prefix for tagging"
+  type        = string
+  default     = "cms-ingestion"
+}
+
+############################################################
+# REGION (optional override)
+############################################################
+
+variable "aws_region" {
+  description = "AWS region"
+  type        = string
+  default     = "us-east-1"
 }
