@@ -1,101 +1,84 @@
-name: Glue-ETL-Pipeline-Terraform
+name: CMS-Full-Pipeline
 
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
-    paths:
-      - script/gluejob.py
-      - terraform/**
+    branches: [ main ]
 
 jobs:
-  deploy:
+
+# =========================================================
+# JOB 1 — INGEST DATA FIRST (MANDATORY)
+# =========================================================
+  ingestion:
+    name: Ingest CMS Data
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: "data ingestion"
 
     steps:
 
-      # ==========================================
-      # Checkout
-      # ==========================================
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v4
+
+    - uses: hashicorp/setup-terraform@v3
+
+    - uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
 
 
-      # ==========================================
-      # AWS AUTH
-      # ==========================================
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+    # ---------------------------------
+    # Launch EC2 ingestion
+    # ---------------------------------
+    - name: Terraform Apply (Ingestion)
+      run: |
+        terraform init
+        terraform apply -auto-approve
 
 
-      # ==========================================
-      # Install Terraform
-      # ==========================================
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+    # ---------------------------------
+    # WAIT until S3 file exists
+    # CRITICAL STEP
+    # ---------------------------------
+    - name: Wait for CMS file in S3
+      run: |
+        echo "Waiting for ingestion file..."
+        for i in {1..60}; do
+          aws s3 ls s3://ter-dump-sahil/cms/raw/ && break
+          echo "Not ready yet... retrying"
+          sleep 30
+        done
 
 
-      # ==========================================
-      # Upload ETL Script to S3
-      # ==========================================
-      - name: Upload ETL script to S3
-        run: |
-          aws s3 cp script/gluejob.py s3://glue-etl-script-00/script/gluejob.py
+# =========================================================
+# JOB 2 — DEPLOY GLUE AFTER DATA EXISTS
+# =========================================================
+  infra:
+    name: Deploy Glue/Athena Infra
+    needs: ingestion
+    runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: terraform/infra1
 
-      # ==========================================
-      # Terraform Deploy Glue Job
-      # ==========================================
-      - name: Terraform Apply (Glue Job)
-        working-directory: terraform/glue_job
-        run: |
-          terraform init
-          terraform apply -auto-approve
+    steps:
 
+    - uses: actions/checkout@v4
 
-      # ==========================================
-      # Start Glue Job
-      # ==========================================
-      - name: Start Glue Job
-        id: startjob
-        run: |
-          JOB_RUN_ID=$(aws glue start-job-run \
-            --job-name transformer_team \
-            --query 'JobRunId' \
-            --output text)
+    - uses: hashicorp/setup-terraform@v3
 
-          echo "JOB_RUN_ID=$JOB_RUN_ID" >> $GITHUB_ENV
+    - uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
 
-
-      # ==========================================
-      # Wait for Glue Job completion
-      # ==========================================
-      - name: Wait for Glue Job
-        run: |
-          while true; do
-            STATUS=$(aws glue get-job-run \
-              --job-name transformer_team \
-              --run-id $JOB_RUN_ID \
-              --query 'JobRun.JobRunState' \
-              --output text)
-
-            echo "Glue status: $STATUS"
-
-            if [ "$STATUS" = "SUCCEEDED" ]; then
-              break
-            fi
-
-            if [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "STOPPED" ]; then
-              exit 1
-            fi
-
-            sleep 30
-          done
-
-
-     
+    - name: Terraform Apply (Infra)
+      run: |
+        terraform init
+        terraform apply -auto-approve
