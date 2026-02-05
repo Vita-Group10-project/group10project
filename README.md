@@ -9,20 +9,14 @@ Using Big Data technologies, the project processes large-scale payment records t
 By leveraging distributed data processing frameworks and modern BI tools, the project delivers actionable insights into physician influence, payment composition, and manufacturer benchmarking through interactive dashboards designed for multiple business audiences.
 
 ## 🎯 Project Objectives
----
-- Collect, manage, and process large-scale CMS Open Payments data using Big Data techniques to support scalable healthcare analytics.
 
-- Clean, standardize, and transform high-volume payment records to ensure data accuracy, consistency, and analytical reliability.
+- To collect, manage, and process large-scale CMS Open Payments data using Big Data techniques to support scalable healthcare analytics.
+- To clean, standardize, and transform high-volume payment records to ensure data accuracy, consistency, and analytical reliability.
+- To analyze payment trends across time and geography by examining variations by year, month, state, and region.
+- To explain physician payment dominance by breaking down payments by recipient type, specialty, nature of payment, and form of payment.
+- To benchmark manufacturers and medical products based on spending levels, geographic reach, and product portfolio.
+- To visualize insights through interactive business intelligence dashboards and demonstrate the role of Big Data analytics in healthcare transparency and market intelligence.
 
-- Analyze payment trends across time and geography by examining variations by `year`, `month`, `state`, and `region`.
-
-- Explain physician payment dominance by breaking down payments by `recipient_type`, `recipient_specialty`, `nature_of_payment`, and `form_of_payment`.
-
-- Benchmark manufacturers and medical products based on spending levels, geographic reach, and product portfolio.
-
-- Visualize insights through interactive business intelligence dashboards and demonstrate the role of Big Data analytics in healthcare transparency and market intelligence.
-
----
 📂 Dataset Information
 Source
 ---
