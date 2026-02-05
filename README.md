@@ -101,5 +101,6 @@ These records enable deep analysis of payment behavior, influence patterns, and 
 
 
 ---
-⚙️ Data Ingestion
+📊 Architecture Diagrams
 ---
+
