@@ -51,7 +51,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
 
-              # Athena
+              # Athena permissions
               - Effect: Allow
                 Action:
                   - athena:StartQueryExecution
@@ -59,7 +59,7 @@ Resources:
                   - athena:GetQueryResults
                 Resource: "*"
 
-              # S3
+              # S3 permissions
               - Effect: Allow
                 Action:
                   - s3:*
@@ -121,7 +121,7 @@ Resources:
 
 
 # ==================================================
-# S3 TRIGGER PERMISSION
+# ALLOW S3 TO INVOKE LAMBDA
 # ==================================================
   LambdaPermission:
     Type: AWS::Lambda::Permission
@@ -134,30 +134,15 @@ Resources:
 
 
 # ==================================================
-# S3 BUCKET NOTIFICATION
-# ==================================================
-  BucketNotification:
-    Type: AWS::S3::BucketNotification
-    Properties:
-      Bucket: !Ref EnrichBucket
-      NotificationConfiguration:
-        LambdaConfigurations:
-          - Event: s3:ObjectCreated:*
-            Function: !GetAtt AthenaTriggerLambda.Arn
-
-    DependsOn: LambdaPermission
-
-
-# ==================================================
 # OUTPUTS
 # ==================================================
 Outputs:
 
   LambdaName:
-    Value: enrich-athena-trigger
+    Value: !Ref AthenaTriggerLambda
 
   TriggerBucket:
     Value: !Ref EnrichBucket
 
   ReportingLocation:
-    Value: !Sub s3://${ReportingBucket}/athena-results-main/
+    Value: !Sub s3://${ReportingBucket}/athena-results/
