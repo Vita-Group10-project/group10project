@@ -26,7 +26,7 @@ variable "cms_url"            { type = string }
 
 variable "instance_type" {
   type    = string
-  default = "t3.micro"   # ✅ Free tier safe
+  default = "c7i-flex.large"   # ✅ Free tier safe
 }
 
 ############################################################
