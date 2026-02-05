@@ -1,6 +1,7 @@
 resource "aws_s3_bucket" "bronze" { 
-bucket = "cms-open-payment-raw-zone" lifecycle 
-{ prevent_destroy = true } }
+  bucket = "cms-open-payment-raw-zone" 
+  lifecycle { 
+    prevent_destroy = true } }
 
 
 data "aws_s3_bucket" "silver" {
