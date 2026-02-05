@@ -159,9 +159,8 @@ jobs:
       # IMPORTANT: python file must be at root
       # ==========================================
       - name: Package Lambda
-        run: |
-          cd Lambda-iceberg-table
-            zip athena_trigger.zip athena_trigger.py
+        run: zip -j athena_trigger.zip Lambda-iceberg-table/athena_trigger.py
+
 
 
       # ==========================================
