@@ -104,8 +104,19 @@ These records enable deep analysis of payment behavior, influence patterns, and 
 
 ![Architecture Diagram](work_010/Architecture_Diagram.jpeg)
 
+## 🔑 Key Performance Indicators (KPIs)
 
+- *Overall Payment Scale:* Measure the overall size and complexity of the Open Payments ecosystem using total_payment_amount, manufacturer_count, medical_product_count, covered_recipient_count, and total_transactions.
 
+- *High-Value Product Concentration:* Assess payment concentration among top products using medical_product_name and total_payment_amount by product.
+
+- *Geographic Payment Distribution:* Evaluate nationwide and state-level payment concentration using recipient_state and total_payment_amount by state.
+
+- *Specialty Payment Concentration:* Analyze financial focus across clinical areas using recipient_specialty and total_payment_amount by specialty.
+
+- *Nature of Payment Mix:* Determine the purpose and structure of payments using nature_of_payment categories and total_payment_amount by payment type.
+
+- *Monthly Payment Trend:* Track seasonality and time-based patterns using total_payment_amount by payment_year and payment_month.
 ## 📈 Dashboard
 
 ![CMS Open Payments Trends & Insight](Visualization/Dashboard.png)
