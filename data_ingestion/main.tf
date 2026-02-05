@@ -13,9 +13,9 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# =========================================================
+############################################################
 # VARIABLES
-# =========================================================
+############################################################
 variable "bucket_name" {
   default = "cms-open-payment-raw-zone"
 }
@@ -24,13 +24,14 @@ variable "cms_url" {
   default = "https://download.cms.gov/openpayments/PGYR2024_P01232026_01102026/OP_DTL_GNRL_PGYR2024_P01232026_01102026.csv"
 }
 
+# ✅ free tier safe
 variable "instance_type" {
-  default = "c7i-flex.large"
+  default = "t2.micro"
 }
 
-# =========================================================
-# USE DEFAULT VPC (NO LIMIT ISSUES)
-# =========================================================
+############################################################
+# DEFAULT VPC (NO LIMIT ISSUES)
+############################################################
 data "aws_vpc" "default" {
   default = true
 }
@@ -42,19 +43,18 @@ data "aws_subnets" "default" {
   }
 }
 
-# =========================================================
-# S3 BUCKET (RAW INGEST TARGET)
-# =========================================================
-#resource "aws_s3_bucket" "raw_bucket" {
-#  bucket        = var.bucket_name
-# force_destroy = true
-#}
+############################################################
+# USE EXISTING S3 BUCKET
+############################################################
+data "aws_s3_bucket" "raw_bucket" {
+  bucket = var.bucket_name
+}
 
-# =========================================================
+############################################################
 # SECURITY GROUP (OUTBOUND ONLY)
-# =========================================================
+############################################################
 resource "aws_security_group" "ec2_sg" {
-  name_prefix = "cms-ec2-sg-"
+  name_prefix = "cms-ingest-sg-"
   vpc_id      = data.aws_vpc.default.id
 
   egress {
@@ -65,23 +65,31 @@ resource "aws_security_group" "ec2_sg" {
   }
 }
 
-# =========================================================
-# IAM POLICY (AUTO UNIQUE)
-# =========================================================
+############################################################
+# IAM POLICY (UNIQUE NAME)
+############################################################
 resource "aws_iam_policy" "policy" {
-  name_prefix = "cms-ec2-policy-"
+  name_prefix = "cms-ingest-policy-"
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+
+      # write to bucket
       {
         Effect = "Allow"
-        Action = ["s3:*"]
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject"
+        ]
         Resource = [
-          aws_s3_bucket.raw_bucket.arn,
+          data.aws_s3_bucket.raw_bucket.arn,
           "${data.aws_s3_bucket.raw_bucket.arn}/*"
         ]
       },
+
+      # terminate itself
       {
         Effect = "Allow"
         Action = [
@@ -94,17 +102,19 @@ resource "aws_iam_policy" "policy" {
   })
 }
 
-# =========================================================
-# IAM ROLE
-# =========================================================
+############################################################
+# IAM ROLE + PROFILE
+############################################################
 resource "aws_iam_role" "role" {
-  name_prefix = "cms-ec2-role-"
+  name_prefix = "cms-ingest-role-"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
       Effect = "Allow"
-      Principal = { Service = "ec2.amazonaws.com" }
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
       Action = "sts:AssumeRole"
     }]
   })
@@ -116,13 +126,13 @@ resource "aws_iam_role_policy_attachment" "attach" {
 }
 
 resource "aws_iam_instance_profile" "profile" {
-  name_prefix = "cms-profile-"
+  name_prefix = "cms-ingest-profile-"
   role        = aws_iam_role.role.name
 }
 
-# =========================================================
-# AMAZON LINUX AMI
-# =========================================================
+############################################################
+# AMAZON LINUX
+############################################################
 data "aws_ami" "amazon_linux" {
   most_recent = true
   owners      = ["amazon"]
@@ -133,9 +143,9 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
-# =========================================================
+############################################################
 # EC2 INGESTION INSTANCE
-# =========================================================
+############################################################
 resource "aws_instance" "cms_ingest" {
 
   ami                    = data.aws_ami.amazon_linux.id
@@ -145,7 +155,7 @@ resource "aws_instance" "cms_ingest" {
   iam_instance_profile   = aws_iam_instance_profile.profile.name
 
   root_block_device {
-    volume_size = 30
+    volume_size = 20
     volume_type = "gp3"
   }
 
@@ -190,10 +200,9 @@ EOF
   }
 }
 
-# =========================================================
-# OUTPUTS
-# =========================================================
-output "bucket" {
+############################################################
+# OUTPUT
+############################################################
+output "raw_bucket_name" {
   value = data.aws_s3_bucket.raw_bucket.bucket
-
 }
