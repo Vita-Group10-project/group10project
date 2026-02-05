@@ -91,7 +91,7 @@ These records enable deep analysis of payment behavior, influence patterns, and 
 
 ## 🏗️ Architecture Diagram
 
-![Architecture Diagram](Architecture/Architecture_Diagram.jpeg)
+![Architecture Diagram](Architecture/Architecture_Diagrams.jpeg)
 
 ## 🔑 Key Performance Indicators (KPIs)
 
