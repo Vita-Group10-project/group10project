@@ -106,3 +106,8 @@ These records enable deep analysis of payment behavior, influence patterns, and 
 
 
 
+## 📈 Dashboard
+
+![CMS Open Payments Trends & Insight](Visualization/Dashboard.png)
+
+
