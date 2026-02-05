@@ -101,7 +101,7 @@ Resources:
         "--OUTPUT_PATH": !Ref OutputPath
 
       ExecutionProperty:
-        MaxConcurrentRuns: 1
+        MaxConcurrentRuns: 5
 
 Outputs:
   GlueJobName:
