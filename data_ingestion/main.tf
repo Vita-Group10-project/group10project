@@ -25,7 +25,7 @@ variable "cms_url" {
 }
 
 variable "instance_type" {
-  default = "t3.large"
+  default = "c7i-flex.large"
 }
 
 # =========================================================
