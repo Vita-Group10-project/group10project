@@ -45,10 +45,10 @@ data "aws_subnets" "default" {
 # =========================================================
 # S3 BUCKET (RAW INGEST TARGET)
 # =========================================================
-resource "aws_s3_bucket" "raw_bucket" {
-  bucket        = var.bucket_name
-  force_destroy = true
-}
+#resource "aws_s3_bucket" "raw_bucket" {
+#  bucket        = var.bucket_name
+# force_destroy = true
+#}
 
 # =========================================================
 # SECURITY GROUP (OUTBOUND ONLY)
