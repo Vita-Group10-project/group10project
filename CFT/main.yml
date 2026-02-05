@@ -159,13 +159,13 @@ Resources:
 ######################################################
 # LAMBDA
 ######################################################
-  AthenaTriggerLambda:
+   AthenaTriggerLambda:
     Type: AWS::Lambda::Function
     Properties:
       Runtime: python3.11
       Handler: athena_trigger.lambda_handler
       Timeout: 900
-      Role: !GetAtt GlueExecutionRole.Arn
+      Role: !GetAtt AthenaLambdaRole.Arn
       Code:
         S3Bucket: !Ref ScriptBucket
         S3Key: !Ref LambdaZip
