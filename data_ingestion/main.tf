@@ -17,7 +17,7 @@ provider "aws" {
 # VARIABLES
 # =========================================================
 variable "bucket_name" {
-  default = "cms-open-payment-raw-data"
+  default = "cms-open-payment-raw-zone"
 }
 
 variable "cms_url" {
