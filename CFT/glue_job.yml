@@ -17,7 +17,7 @@ Parameters:
   InputPath:
     Type: String
     Description: Default raw input path
-    Default: s3://raw-zone-00/s3://raw-zone-00/direct/
+    Default: s3://raw-zone-00/direct/
 
   OutputPath:
     Type: String
