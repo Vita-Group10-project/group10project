@@ -17,7 +17,7 @@ Parameters:
   InputPath:
     Type: String
     Description: Default raw input path
-    Default: s3://group10-entire-dataset/unzip_csv/OP_DTL_GNRL_PGYR2024_P06302025_06162025.csv
+    Default: s3://raw-zone-00/direct/
 
   OutputPath:
     Type: String
