@@ -1,0 +1,177 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Full CMS Pipeline (Glue → Glue → Lambda → Athena)
+
+########################################################
+# PARAMETERS
+########################################################
+Parameters:
+
+  ScriptBucket:
+    Type: String
+    Default: glue-etl-script-00
+
+  IngestScript:
+    Type: String
+    Default: script/data_ingest.py
+
+  TransformScript:
+    Type: String
+    Default: script/gluejob.py
+
+  LambdaZip:
+    Type: String
+    Default: athena_trigger.zip
+
+
+########################################################
+# IAM ROLES
+########################################################
+
+GlueExecutionRole:
+  Type: AWS::IAM::Role
+  Properties:
+    AssumeRolePolicyDocument:
+      Version: "2012-10-17"
+      Statement:
+        - Effect: Allow
+          Principal:
+            Service: glue.amazonaws.com
+          Action: sts:AssumeRole
+    ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
+      - arn:aws:iam::aws:policy/AmazonS3FullAccess
+
+
+AthenaLambdaRole:
+  Type: AWS::IAM::Role
+  Properties:
+    AssumeRolePolicyDocument:
+      Version: "2012-10-17"
+      Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+    ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      - arn:aws:iam::aws:policy/AmazonAthenaFullAccess
+      - arn:aws:iam::aws:policy/AmazonS3FullAccess
+
+
+StepFunctionRole:
+  Type: AWS::IAM::Role
+  Properties:
+    AssumeRolePolicyDocument:
+      Version: "2012-10-17"
+      Statement:
+        - Effect: Allow
+          Principal:
+            Service: states.amazonaws.com
+          Action: sts:AssumeRole
+    Policies:
+      - PolicyName: StepGlueLambdaAccess
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - glue:StartJobRun
+                - glue:GetJobRun
+                - lambda:InvokeFunction
+              Resource: "*"
+
+
+########################################################
+# GLUE JOB 1 – INGESTION
+########################################################
+GlueIngestionJob:
+  Type: AWS::Glue::Job
+  Properties:
+    Name: ingestion-job
+    Role: !GetAtt GlueExecutionRole.Arn
+    GlueVersion: "4.0"
+    WorkerType: G.1X
+    NumberOfWorkers: 5
+    Command:
+      Name: glueetl
+      ScriptLocation: !Sub s3://${ScriptBucket}/${IngestScript}
+      PythonVersion: 3
+
+
+########################################################
+# GLUE JOB 2 – TRANSFORM
+########################################################
+GlueTransformJob:
+  Type: AWS::Glue::Job
+  Properties:
+    Name: transform-job
+    Role: !GetAtt GlueExecutionRole.Arn
+    GlueVersion: "4.0"
+    WorkerType: G.1X
+    NumberOfWorkers: 5
+    Command:
+      Name: glueetl
+      ScriptLocation: !Sub s3://${ScriptBucket}/${TransformScript}
+      PythonVersion: 3
+
+
+########################################################
+# LAMBDA
+########################################################
+AthenaTriggerLambda:
+  Type: AWS::Lambda::Function
+  Properties:
+    Runtime: python3.11
+    Handler: athena_trigger.lambda_handler
+    Timeout: 900
+    Role: !GetAtt AthenaLambdaRole.Arn
+    Code:
+      S3Bucket: !Ref ScriptBucket
+      S3Key: !Ref LambdaZip
+
+
+########################################################
+# STEP FUNCTION (SEQUENTIAL FLOW)
+########################################################
+PipelineStateMachine:
+  Type: AWS::StepFunctions::StateMachine
+  Properties:
+    RoleArn: !GetAtt StepFunctionRole.Arn
+    DefinitionString: !Sub |
+      {
+        "StartAt": "Ingestion",
+        "States": {
+          "Ingestion": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::glue:startJobRun.sync",
+            "Parameters": {
+              "JobName": "${GlueIngestionJob}"
+            },
+            "Next": "Transform"
+          },
+          "Transform": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::glue:startJobRun.sync",
+            "Parameters": {
+              "JobName": "${GlueTransformJob}"
+            },
+            "Next": "LambdaTrigger"
+          },
+          "LambdaTrigger": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Parameters": {
+              "FunctionName": "${AthenaTriggerLambda}"
+            },
+            "End": true
+          }
+        }
+      }
+
+
+########################################################
+# OUTPUTS
+########################################################
+Outputs:
+  StateMachine:
+    Value: !Ref PipelineStateMachine
