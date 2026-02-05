@@ -25,9 +25,10 @@ Resources:
       Role: !GetAtt GlueRole.Arn
 
       Command:
-        Name: pythonshell
+        Name: glueetl
+        ScriptLocation: !Ref ScriptS3Path
         PythonVersion: 3
-        ScriptLocation: s3://glue-etl-script-00/script/data_ingest.py
+
 
       GlueVersion: "4.0"
       MaxCapacity: 5
