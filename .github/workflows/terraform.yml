@@ -6,15 +6,15 @@ on:
       bronze_bucket:
         description: "Raw/Bronze bucket name"
         required: true
-        default: "cms-open-payment-raw-zone"
+        default: "raw-zone-00"
 
       silver_bucket:
-        description: "Silver/Enriched bucket name"
+        description: "Silver bucket name"
         required: true
         default: "enriched-zone-00"
 
       gold_bucket:
-        description: "Gold/Reporting bucket name"
+        description: "Gold bucket name"
         required: true
         default: "reporting-zone-00"
 
@@ -22,11 +22,11 @@ on:
     branches: [ main ]
 
 
+jobs:
+
 ############################################################
 # JOB 1 — INGEST DATA FIRST
 ############################################################
-jobs:
-
   ingestion:
     name: Ingest CMS Data
     runs-on: ubuntu-latest
@@ -36,48 +36,45 @@ jobs:
         working-directory: data_ingestion
 
     steps:
-
       - uses: actions/checkout@v4
-
       - uses: hashicorp/setup-terraform@v3
-
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-
       #######################################################
-      # TERRAFORM APPLY (INGESTION EC2)
+      # Terraform Apply
       #######################################################
       - name: Terraform Apply (Ingestion)
         run: |
           terraform init
           terraform apply -auto-approve \
-            -var="bronze_bucket_name=${{ github.event.inputs.bronze_bucket }}" \
-            -var="silver_bucket_name=${{ github.event.inputs.silver_bucket }}" \
-            -var="gold_bucket_name=${{ github.event.inputs.gold_bucket }}" \
+            -var="bronze_bucket_name=${{ github.event.inputs.bronze_bucket || 'cms-open-payment-raw-zone' }}" \
+            -var="silver_bucket_name=${{ github.event.inputs.silver_bucket || 'enriched-zone-00' }}" \
+            -var="gold_bucket_name=${{ github.event.inputs.gold_bucket || 'reporting-zone-00' }}" \
             -var="cms_url=https://download.cms.gov/openpayments/PGYR2024_P01232026_01102026/OP_DTL_GNRL_PGYR2024_P01232026_01102026.csv"
 
 
       #######################################################
-      # WAIT FOR FILE IN S3 (DYNAMIC)
+      # Wait until actual CSV exists
       #######################################################
       - name: Wait for CMS file in S3
         run: |
-          echo "Waiting for ingestion file in ${{ github.event.inputs.bronze_bucket }}..."
+          BUCKET=${{ github.event.inputs.bronze_bucket || 'cms-open-payment-raw-zone' }}
+
+          echo "Waiting for CSV in $BUCKET..."
 
           for i in {1..60}; do
-            aws s3 ls s3://${{ github.event.inputs.bronze_bucket }}/cms/raw/ && break
+            aws s3 ls s3://$BUCKET/cms/raw/ --recursive | grep ".csv" && break
             echo "Not ready yet... retrying"
             sleep 30
           done
 
 
-
 ############################################################
-# JOB 2 — DEPLOY GLUE/ATHENA AFTER DATA EXISTS
+# JOB 2 — DEPLOY GLUE/ATHENA
 ############################################################
   infra:
     name: Deploy Glue/Athena Infra
@@ -89,25 +86,21 @@ jobs:
         working-directory: terraform/infra1
 
     steps:
-
       - uses: actions/checkout@v4
-
       - uses: hashicorp/setup-terraform@v3
-
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-
       #######################################################
-      # TERRAFORM APPLY (GLUE + ATHENA INFRA)
+      # Terraform Apply Infra
       #######################################################
       - name: Terraform Apply (Infra)
         run: |
           terraform init
           terraform apply -auto-approve \
-            -var="bronze_bucket_name=${{ github.event.inputs.bronze_bucket }}" \
-            -var="silver_bucket_name=${{ github.event.inputs.silver_bucket }}" \
-            -var="gold_bucket_name=${{ github.event.inputs.gold_bucket }}"
+            -var="bronze_bucket_name=${{ github.event.inputs.bronze_bucket || 'cms-open-payment-raw-zone' }}" \
+            -var="silver_bucket_name=${{ github.event.inputs.silver_bucket || 'enriched-zone-00' }}" \
+            -var="gold_bucket_name=${{ github.event.inputs.gold_bucket || 'reporting-zone-00' }}"
