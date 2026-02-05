@@ -7,7 +7,7 @@ This project focuses on the analysis and visualization of CMS Open Payments data
 Using Big Data technologies, the project processes large-scale payment records to uncover temporal trends, geographic concentration, payment drivers, and competitive manufacturer behavior.
 
 By leveraging distributed data processing frameworks and modern BI tools, the project delivers actionable insights into physician influence, payment composition, and manufacturer benchmarking through interactive dashboards designed for multiple business audiences.
----
+
 ## 🎯 Project Objectives
 ---
 - Collect, manage, and process large-scale CMS Open Payments data using Big Data techniques to support scalable healthcare analytics.
