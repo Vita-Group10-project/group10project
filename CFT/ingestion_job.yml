@@ -20,7 +20,7 @@ Parameters:
 
   NumberOfWorkers:
     Type: Number
-    Default: 2
+    Default: 5
 
 
 # ==================================================
