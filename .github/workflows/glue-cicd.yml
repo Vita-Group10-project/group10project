@@ -7,6 +7,8 @@ on:
       - main
     paths:
       - script/gluejob.py
+      - lmabda for ice-BergTable/athena_trigger.py
+      - CFT/lambda.yml
 
 jobs:
   upload:
@@ -152,4 +154,33 @@ jobs:
             sleep 30
           done
           
+    # ==========================================
+      # ZIP LAMBDA
+      # IMPORTANT: python file must be at root
+      # ==========================================
+      - name: Package Lambda
+        run: |
+          cd lambda
+            zip athena_trigger.zip athena_trigger.py
+
+
+      # ==========================================
+      # UPLOAD ZIP TO S3
+      # ==========================================
+      - name: Upload Lambda package to S3
+        run: |
+          aws s3 cp lambda/athena_trigger.zip \
+            s3://glue-etl-script-00/athena_trigger.zip
+
+
+      # ==========================================
+      # DEPLOY CLOUDFORMATION (Lambda stack)
+      # ==========================================
+      - name: Deploy Lambda Stack
+        run: |
+          aws cloudformation deploy \
+            --template-file CFT/lambda.yml \
+            --stack-name lambda-stack \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --region ${{ secrets.AWS_REGION }}
       
