@@ -3,15 +3,15 @@
 ############################################################
 
 data "aws_s3_bucket" "bronze" {
-  bucket = var.bronze_bucket_name
+  bucket = var.raw-zone-00
 }
 
 data "aws_s3_bucket" "silver" {
-  bucket = var.silver_bucket_name
+  bucket = var.enriched-zone-00
 }
 
 data "aws_s3_bucket" "gold" {
-  bucket = var.gold_bucket_name
+  bucket = var.reporting-zone-00
 }
 
 ############################################################
