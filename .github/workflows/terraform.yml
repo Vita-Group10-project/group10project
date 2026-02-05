@@ -2,61 +2,83 @@ name: CMS-Full-Pipeline
 
 on:
   workflow_dispatch:
+    inputs:
+      bronze_bucket:
+        description: "Raw/Bronze bucket name"
+        required: true
+        default: "cms-open-payment-raw-zone"
+
+      silver_bucket:
+        description: "Silver/Enriched bucket name"
+        required: true
+        default: "enriched-zone-00"
+
+      gold_bucket:
+        description: "Gold/Reporting bucket name"
+        required: true
+        default: "reporting-zone-00"
+
   push:
     branches: [ main ]
 
+
+############################################################
+# JOB 1 — INGEST DATA FIRST
+############################################################
 jobs:
 
-# =========================================================
-# JOB 1 — INGEST DATA FIRST (MANDATORY)
-# =========================================================
   ingestion:
     name: Ingest CMS Data
     runs-on: ubuntu-latest
 
     defaults:
       run:
-        working-directory: "data_ingestion"
+        working-directory: data_ingestion
 
     steps:
 
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v3
 
-    - uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
-
-
-    # ---------------------------------
-    # Launch EC2 ingestion
-    # ---------------------------------
-    - name: Terraform Apply (Ingestion)
-      run: |
-        terraform init
-        terraform apply -auto-approve
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
 
 
-    # ---------------------------------
-    # WAIT until S3 file exists
-    # CRITICAL STEP
-    # ---------------------------------
-    - name: Wait for CMS file in S3
-      run: |
-        echo "Waiting for ingestion file..."
-        for i in {1..60}; do
-          aws s3 ls s3://ter-dump-sahil/cms/raw/ && break
-          echo "Not ready yet... retrying"
-          sleep 30
-        done
+      #######################################################
+      # TERRAFORM APPLY (INGESTION EC2)
+      #######################################################
+      - name: Terraform Apply (Ingestion)
+        run: |
+          terraform init
+          terraform apply -auto-approve \
+            -var="bronze_bucket_name=${{ github.event.inputs.bronze_bucket }}" \
+            -var="silver_bucket_name=${{ github.event.inputs.silver_bucket }}" \
+            -var="gold_bucket_name=${{ github.event.inputs.gold_bucket }}" \
+            -var="cms_url=https://download.cms.gov/openpayments/PGYR2024_P01232026_01102026/OP_DTL_GNRL_PGYR2024_P01232026_01102026.csv"
 
 
-# =========================================================
-# JOB 2 — DEPLOY GLUE AFTER DATA EXISTS
-# =========================================================
+      #######################################################
+      # WAIT FOR FILE IN S3 (DYNAMIC)
+      #######################################################
+      - name: Wait for CMS file in S3
+        run: |
+          echo "Waiting for ingestion file in ${{ github.event.inputs.bronze_bucket }}..."
+
+          for i in {1..60}; do
+            aws s3 ls s3://${{ github.event.inputs.bronze_bucket }}/cms/raw/ && break
+            echo "Not ready yet... retrying"
+            sleep 30
+          done
+
+
+
+############################################################
+# JOB 2 — DEPLOY GLUE/ATHENA AFTER DATA EXISTS
+############################################################
   infra:
     name: Deploy Glue/Athena Infra
     needs: ingestion
@@ -68,17 +90,24 @@ jobs:
 
     steps:
 
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v3
 
-    - uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
 
-    - name: Terraform Apply (Infra)
-      run: |
-        terraform init
-        terraform apply -auto-approve
+
+      #######################################################
+      # TERRAFORM APPLY (GLUE + ATHENA INFRA)
+      #######################################################
+      - name: Terraform Apply (Infra)
+        run: |
+          terraform init
+          terraform apply -auto-approve \
+            -var="bronze_bucket_name=${{ github.event.inputs.bronze_bucket }}" \
+            -var="silver_bucket_name=${{ github.event.inputs.silver_bucket }}" \
+            -var="gold_bucket_name=${{ github.event.inputs.gold_bucket }}"
