@@ -167,10 +167,7 @@ jobs:
       # UPLOAD ZIP TO S3
       # ==========================================
       - name: Upload Lambda package to S3
-        run: |
-          aws s3 cp Lambda-iceberg-table/athena_trigger.zip \
-            s3://glue-etl-script-00/athena_trigger.zip
-
+        run: aws s3 cp athena_trigger.zip s3://glue-etl-script-00/athena_trigger.zip
 
       # ==========================================
       # DEPLOY CLOUDFORMATION (Lambda stack)
