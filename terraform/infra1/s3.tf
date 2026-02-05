@@ -1,36 +1,24 @@
 ############################################################
-# BRONZE (RAW INGESTION BUCKET → CREATED BY TERRAFORM)
+# EXISTING BUCKETS ONLY (NO CREATION)
 ############################################################
-resource "aws_s3_bucket" "bronze" {
-  bucket = "cms-open-payment-raw-zone"
 
-  force_destroy = true
-
-  tags = {
-    Layer = "bronze"
-    Name  = "raw-zone"
-  }
+data "aws_s3_bucket" "bronze" {
+  bucket = var.bronze_bucket_name
 }
 
-############################################################
-# SILVER (ENRICHED → ALREADY EXISTS)
-############################################################
 data "aws_s3_bucket" "silver" {
-  bucket = "enriched-zone-00"
+  bucket = var.silver_bucket_name
 }
 
-############################################################
-# GOLD (ATHENA RESULTS → ALREADY EXISTS)
-############################################################
 data "aws_s3_bucket" "gold" {
-  bucket = "reporting-zone-00"
+  bucket = var.gold_bucket_name
 }
 
 ############################################################
-# OUTPUTS (OPTIONAL BUT USEFUL)
+# OUTPUTS (optional)
 ############################################################
 output "bronze_bucket" {
-  value = aws_s3_bucket.bronze.bucket
+  value = data.aws_s3_bucket.bronze.bucket
 }
 
 output "silver_bucket" {
