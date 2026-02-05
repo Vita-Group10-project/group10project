@@ -1,3 +1,6 @@
+############################################################
+# PROVIDER
+############################################################
 terraform {
   required_version = ">= 1.3.0"
 
@@ -14,23 +17,7 @@ provider "aws" {
 }
 
 ############################################################
-# VARIABLES
-############################################################
-variable "bucket_name" {
-  default = "cms-open-payment-raw-zone"
-}
-
-variable "cms_url" {
-  default = "https://download.cms.gov/openpayments/PGYR2024_P01232026_01102026/OP_DTL_GNRL_PGYR2024_P01232026_01102026.csv"
-}
-
-# ✅ free tier safe
-variable "instance_type" {
-  default = "t2.micro"
-}
-
-############################################################
-# DEFAULT VPC (NO LIMIT ISSUES)
+# DEFAULT VPC (NO LIMIT / NO CUSTOM NETWORK NEEDED)
 ############################################################
 data "aws_vpc" "default" {
   default = true
@@ -44,19 +31,13 @@ data "aws_subnets" "default" {
 }
 
 ############################################################
-# USE EXISTING S3 BUCKET
-############################################################
-data "aws_s3_bucket" "raw_bucket" {
-  bucket = var.bucket_name
-}
-
-############################################################
-# SECURITY GROUP (OUTBOUND ONLY)
+# SECURITY GROUP (OUTBOUND ONLY FOR DOWNLOAD + S3)
 ############################################################
 resource "aws_security_group" "ec2_sg" {
   name_prefix = "cms-ingest-sg-"
   vpc_id      = data.aws_vpc.default.id
 
+  # Only outbound required
   egress {
     from_port   = 0
     to_port     = 0
@@ -66,72 +47,7 @@ resource "aws_security_group" "ec2_sg" {
 }
 
 ############################################################
-# IAM POLICY (UNIQUE NAME)
-############################################################
-resource "aws_iam_policy" "policy" {
-  name_prefix = "cms-ingest-policy-"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-
-      # write to bucket
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:PutObject",
-          "s3:GetObject",
-          "s3:DeleteObject"
-        ]
-        Resource = [
-          data.aws_s3_bucket.raw_bucket.arn,
-          "${data.aws_s3_bucket.raw_bucket.arn}/*"
-        ]
-      },
-
-      # terminate itself
-      {
-        Effect = "Allow"
-        Action = [
-          "ec2:TerminateInstances",
-          "ec2:DescribeInstances"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-############################################################
-# IAM ROLE + PROFILE
-############################################################
-resource "aws_iam_role" "role" {
-  name_prefix = "cms-ingest-role-"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Principal = {
-        Service = "ec2.amazonaws.com"
-      }
-      Action = "sts:AssumeRole"
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "attach" {
-  role       = aws_iam_role.role.name
-  policy_arn = aws_iam_policy.policy.arn
-}
-
-resource "aws_iam_instance_profile" "profile" {
-  name_prefix = "cms-ingest-profile-"
-  role        = aws_iam_role.role.name
-}
-
-############################################################
-# AMAZON LINUX
+# AMAZON LINUX 2 AMI
 ############################################################
 data "aws_ami" "amazon_linux" {
   most_recent = true
@@ -145,6 +61,7 @@ data "aws_ami" "amazon_linux" {
 
 ############################################################
 # EC2 INGESTION INSTANCE
+# Downloads CMS file → uploads to Bronze bucket → self-terminate
 ############################################################
 resource "aws_instance" "cms_ingest" {
 
@@ -152,13 +69,17 @@ resource "aws_instance" "cms_ingest" {
   instance_type          = var.instance_type
   subnet_id              = data.aws_subnets.default.ids[0]
   vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+
   iam_instance_profile   = aws_iam_instance_profile.profile.name
 
   root_block_device {
-    volume_size = 20
+    volume_size = 30
     volume_type = "gp3"
   }
 
+  ##########################################################
+  # USER DATA SCRIPT
+  ##########################################################
   user_data = <<-EOF
 #!/bin/bash
 set -e
@@ -171,7 +92,7 @@ import requests, boto3
 from datetime import datetime
 
 url = "${var.cms_url}"
-bucket = "${var.bucket_name}"
+bucket = "${var.bronze_bucket_name}"
 
 today = datetime.today().strftime("%Y-%m-%d")
 key = f"cms/raw/{today}/cms.csv"
@@ -183,7 +104,7 @@ r.raise_for_status()
 
 boto3.client("s3").upload_fileobj(r.raw, bucket, key)
 
-print("Upload complete:", key)
+print("Uploaded to:", f"s3://{bucket}/{key}")
 PY
 
 python3 /tmp/ingest.py
@@ -201,8 +122,8 @@ EOF
 }
 
 ############################################################
-# OUTPUT
+# OUTPUTS
 ############################################################
-output "raw_bucket_name" {
-  value = data.aws_s3_bucket.raw_bucket.bucket
+output "bronze_bucket_used" {
+  value = var.bronze_bucket_name
 }
