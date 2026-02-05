@@ -1,6 +1,31 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: cms-website-ingestion
+Description: CMS Website Ingestion Glue Job
 
+
+# ==================================================
+# PARAMETERS (MANDATORY because you use !Ref)
+# ==================================================
+Parameters:
+
+  ScriptS3Path:
+    Type: String
+
+  GlueJobName:
+    Type: String
+    Default: cms-website-ingestion
+
+  WorkerType:
+    Type: String
+    Default: G.1X
+
+  NumberOfWorkers:
+    Type: Number
+    Default: 2
+
+
+# ==================================================
+# RESOURCES
+# ==================================================
 Resources:
 
   GlueRole:
@@ -13,6 +38,7 @@ Resources:
             Principal:
               Service: glue.amazonaws.com
             Action: sts:AssumeRole
+
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
@@ -21,19 +47,32 @@ Resources:
   GlueIngestionJob:
     Type: AWS::Glue::Job
     Properties:
-      Name: cms-website-ingestion
+
+      Name: !Ref GlueJobName
       Role: !GetAtt GlueRole.Arn
 
+      # ✅ MUST be glueetl for Spark
       Command:
         Name: glueetl
         ScriptLocation: !Ref ScriptS3Path
         PythonVersion: 3
 
-
       GlueVersion: "4.0"
-      MaxCapacity: 5
+
+      # ✅ Spark compute settings (NOT MaxCapacity)
+      WorkerType: !Ref WorkerType
+      NumberOfWorkers: !Ref NumberOfWorkers
 
       DefaultArguments:
         "--RAW_BUCKET": "raw-zone-00"
         "--URL": "https://download.cms.gov/openpayments/PGYR2024_P01232026_01102026/OP_DTL_GNRL_PGYR2024_P01232026_01102026.csv"
-        "--job-language": python
+        "--job-language": "python"
+
+
+# ==================================================
+# OUTPUT
+# ==================================================
+Outputs:
+
+  JobName:
+    Value: !Ref GlueIngestionJob
