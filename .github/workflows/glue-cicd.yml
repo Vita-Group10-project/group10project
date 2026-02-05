@@ -108,7 +108,7 @@ jobs:
               ScriptS3Path=s3://glue-etl-script-00/script/gluejob.py \
               WorkerType=G.1X \
               NumberOfWorkers=5 \
-              InputPath=s3://raw-zone-00/direct/2026/02/ \
+              InputPath=s3://group10-entire-dataset/unzip_csv/OP_DTL_GNRL_PGYR2024_P06302025_06162025.csv \
               OutputPath=s3://enriched-zone-00/transformed_1/ \
             --region us-east-1
 
