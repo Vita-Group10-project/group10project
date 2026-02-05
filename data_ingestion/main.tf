@@ -79,7 +79,7 @@ resource "aws_iam_policy" "policy" {
         Action = ["s3:*"]
         Resource = [
           aws_s3_bucket.raw_bucket.arn,
-          "${aws_s3_bucket.raw_bucket.arn}/*"
+          "${data.aws_s3_bucket.raw_bucket.arn}/*"
         ]
       },
       {
@@ -194,5 +194,6 @@ EOF
 # OUTPUTS
 # =========================================================
 output "bucket" {
-  value = aws_s3_bucket.raw_bucket.bucket
+  value = data.aws_s3_bucket.raw_bucket.bucket
+
 }
