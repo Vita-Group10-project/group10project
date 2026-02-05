@@ -10,7 +10,7 @@ Parameters:
 
   ScriptKey:
     Type: String
-    Default: lambda/athena_trigger.zip
+    Default: athena_trigger.zip
 
   EnrichBucket:
     Type: String
