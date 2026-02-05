@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Lambda trigger on enrich bucket → run Athena queries
+
+
+# ==================================================
+# PARAMETERS
+# ==================================================
+Parameters:
+
+  EnrichBucket:
+    Type: String
+    Default: enriched-zone-00
+
+  ReportingBucket:
+    Type: String
+    Default: reporting-zone-00
+
+  AthenaDatabase:
+    Type: String
+    Default: enrich
+
+  WorkgroupName:
+    Type: String
+    Default: reporting-workgroup
+
+
+# ==================================================
+# RESOURCES
+# ==================================================
+Resources:
+
+
+# ==================================================
+# IAM ROLE FOR LAMBDA
+# ==================================================
+  AthenaLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: athena-trigger-lambda-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+
+      Policies:
+        - PolicyName: AthenaLambdaPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+
+              # Athena
+              - Effect: Allow
+                Action:
+                  - athena:StartQueryExecution
+                  - athena:GetQueryExecution
+                  - athena:GetQueryResults
+                Resource: "*"
+
+              # S3
+              - Effect: Allow
+                Action:
+                  - s3:*
+                Resource: "*"
+
+              # Logs
+              - Effect: Allow
+                Action:
+                  - logs:*
+                Resource: "*"
+
+
+# ==================================================
+# LAMBDA FUNCTION
+# ==================================================
+  AthenaTriggerLambda:
+    Type: AWS::Lamb
