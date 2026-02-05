@@ -65,7 +65,7 @@ jobs:
         id: startjob
         run: |
           JOB_RUN_ID=$(aws glue start-job-run \
-            --job-name glueETL \
+            --job-name transformer_team \
             --query 'JobRunId' \
             --output text)
 
@@ -79,7 +79,7 @@ jobs:
         run: |
           while true; do
             STATUS=$(aws glue get-job-run \
-              --job-name glueETL \
+              --job-name transformer_team \
               --run-id $JOB_RUN_ID \
               --query 'JobRun.JobRunState' \
               --output text)
