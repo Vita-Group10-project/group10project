@@ -1,0 +1,38 @@
+CREATE TABLE {DEST_DATABASE}.{DEST_TABLE}
+    WITH (
+      table_type = 'ICEBERG',
+      is_external = false,
+      location = '{ICEBERG_LOCATION}',
+      format = 'PARQUET',
+      write_compression = 'SNAPPY',
+      partitioning = ARRAY['program_year']
+    )
+    AS
+    SELECT
+        covered_recipient_type,
+        teaching_hospital_name,
+        recipient_city,
+        recipient_country,
+        recipient_category,
+        manufacturer_payment_id,
+        manufacturer_payment_name,
+        manufacturer_payment_country,
+        total_amount_of_payment_usdollars,
+        date_of_payment,
+        number_of_payments_included_in_total_amount,
+        form_of_payment,
+        nature_of_payment,
+        record_id,
+        covered_or_noncovered_indicator,
+        medical_product_type,
+        product_category,
+        medical_product_name,
+        program_year,
+        covered_recipient_full_name,
+        recipient_unique_id,
+        recipient_state_final,
+        specialty_main,
+        manufacturer_name_base,
+        manufacturer_payment_state
+    FROM {SOURCE_DATABASE}.{SOURCE_TABLE};
+
