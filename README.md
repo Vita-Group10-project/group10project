@@ -100,10 +100,9 @@ These records enable deep analysis of payment behavior, influence patterns, and 
 
 
 
----
-📊 Architecture Diagrams
----
+## 🏗️ Architecture Diagram
 
-[](work_010/Architecture_Diagram.png)
+![Architecture Diagram](work_010/Architecture_Diagram.jpeg)
+
 
 
