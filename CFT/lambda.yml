@@ -1,0 +1,99 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: S3 → Lambda → Athena CTAS Iceberg Trigger
+
+
+Parameters:
+
+  ScriptBucket:
+    Type: String
+    Default: glue-etl-script-00
+
+  ScriptKey:
+    Type: String
+    Default: lambda/athena_trigger.zip
+
+  EnrichBucket:
+    Type: String
+    Default: enriched-zone-00
+
+  ReportingBucket:
+    Type: String
+    Default: reporting-zone-00
+
+
+Resources:
+
+
+# ==================================================
+# IAM ROLE
+# ==================================================
+  AthenaLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: athena-trigger-lambda-role
+
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+
+      Policies:
+        - PolicyName: AthenaPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+
+              - Effect: Allow
+                Action:
+                  - athena:*
+                Resource: "*"
+
+              - Effect: Allow
+                Action:
+                  - s3:*
+                Resource: "*"
+
+              - Effect: Allow
+                Action:
+                  - logs:*
+                Resource: "*"
+
+
+# ==================================================
+# LAMBDA (CODE FROM S3)
+# ==================================================
+  AthenaTriggerLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: enrich-athena-trigger
+      Runtime: python3.11
+      Handler: athena_trigger.lambda_handler
+      Timeout: 900
+      MemorySize: 512
+
+      Role: !GetAtt AthenaLambdaRole.Arn
+
+      Code:
+        S3Bucket: !Ref ScriptBucket
+        S3Key: !Ref ScriptKey
+
+
+# ==================================================
+# ALLOW S3 → LAMBDA
+# ==================================================
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AthenaTriggerLambda
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub arn:aws:s3:::${EnrichBucket}
+
+
+Outputs:
+
+  LambdaName:
+    Value: !Ref AthenaTriggerLambda
