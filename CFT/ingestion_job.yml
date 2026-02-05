@@ -54,7 +54,7 @@ Resources:
       # ✅ MUST be glueetl for Spark
       Command:
         Name: glueetl
-        ScriptLocation: !Ref ScriptS3Path
+        ScriptLocation: s3://glue-etl-script-00/script/data_ingest.py
         PythonVersion: 3
 
       GlueVersion: "4.0"
