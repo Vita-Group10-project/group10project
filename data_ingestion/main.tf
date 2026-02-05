@@ -17,7 +17,7 @@ provider "aws" {
 # VARIABLES
 # =========================================================
 variable "bucket_name" {
-  default = "ter-dump-sahil"
+  default = "raw-data-main"
 }
 
 variable "cms_url" {
