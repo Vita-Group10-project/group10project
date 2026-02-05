@@ -76,4 +76,88 @@ Resources:
 # LAMBDA FUNCTION
 # ==================================================
   AthenaTriggerLambda:
-    Type: AWS::Lamb
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: enrich-athena-trigger
+      Runtime: python3.11
+      Handler: index.lambda_handler
+      Timeout: 900
+      Role: !GetAtt AthenaLambdaRole.Arn
+
+      Environment:
+        Variables:
+          DATABASE: !Ref AthenaDatabase
+          OUTPUT: !Sub s3://${ReportingBucket}/athena-results/
+          WORKGROUP: !Ref WorkgroupName
+
+      Code:
+        ZipFile: |
+          import boto3
+          import os
+
+          athena = boto3.client("athena")
+
+          DATABASE = os.environ["DATABASE"]
+          OUTPUT = os.environ["OUTPUT"]
+          WORKGROUP = os.environ["WORKGROUP"]
+
+          def lambda_handler(event, context):
+
+              print("Triggered by new S3 file")
+
+              query = """
+              CREATE OR REPLACE VIEW latest_data AS
+              SELECT * FROM enrich_iceberg;
+              """
+
+              athena.start_query_execution(
+                  QueryString=query,
+                  QueryExecutionContext={"Database": DATABASE},
+                  ResultConfiguration={"OutputLocation": OUTPUT},
+                  WorkGroup=WORKGROUP
+              )
+
+              return {"status": "Query started"}
+
+
+# ==================================================
+# S3 TRIGGER PERMISSION
+# ==================================================
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AthenaTriggerLambda
+      Principal: s3.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !Sub arn:aws:s3:::${EnrichBucket}
+
+
+# ==================================================
+# S3 BUCKET NOTIFICATION
+# ==================================================
+  BucketNotification:
+    Type: AWS::S3::BucketNotification
+    Properties:
+      Bucket: !Ref EnrichBucket
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Function: !GetAtt AthenaTriggerLambda.Arn
+
+    DependsOn: LambdaPermission
+
+
+# ==================================================
+# OUTPUTS
+# ==================================================
+Outputs:
+
+  LambdaName:
+    Value: enrich-athena-trigger
+
+  TriggerBucket:
+    Value: !Ref EnrichBucket
+
+  ReportingLocation:
+    Value: !Sub s3://${ReportingBucket}/athena-results-main/
