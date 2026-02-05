@@ -72,6 +72,33 @@ These records enable deep analysis of payment behavior, influence patterns, and 
 | manufacturer_name_base | Base name of the manufacturer |
 | manufacturer_payment_state | State of manufacturer payment origin |
 
+---
+
+## 📂 Raw Data Overview
+
+| Attribute        | Details     |
+|------------------|-------------|
+| Files            | 1 CSV File  |
+| Total Size       | ~8 GB       |
+| Time Period      | 2023 – 2024 |
+| Total Rows       | 1.5 CR+     |
+| Total Columns    | 91          |
+
+---
+
+## 🛠️ Project Tech Stack
+
+| Category                          | Tools / Frameworks                                  |
+|----------------------------------|----------------------------------------------------|
+| AWS Cloud Service                | AWS S3, AWS Glue, AWS Athena, AWS EC2, AWS Lambda |
+| Programming Language             | PySpark, SQL                                       |
+| Automation & CI/CD               | Terraform, GitHub Actions                          |
+| Project Management & Collaboration | Jira, GitHub                                      |
+| Visualization Tool               | Power BI                                           |
+
+
+
+
 
 ---
 ⚙️ Data Ingestion
