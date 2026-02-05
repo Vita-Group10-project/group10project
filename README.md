@@ -7,25 +7,20 @@ This project focuses on the analysis and visualization of CMS Open Payments data
 Using Big Data technologies, the project processes large-scale payment records to uncover temporal trends, geographic concentration, payment drivers, and competitive manufacturer behavior.
 
 By leveraging distributed data processing frameworks and modern BI tools, the project delivers actionable insights into physician influence, payment composition, and manufacturer benchmarking through interactive dashboards designed for multiple business audiences.
-
 ---
-🎯 Key Objectives
+## 🎯 Project Objectives
 ---
-Collect and process large-scale CMS Open Payments data using Big Data tools
+- Collect, manage, and process large-scale CMS Open Payments data using Big Data techniques to support scalable healthcare analytics.
 
-Clean, standardize, and transform high-volume payment records
+- Clean, standardize, and transform high-volume payment records to ensure data accuracy, consistency, and analytical reliability.
 
-Analyze payment trends across time and geography
+- Analyze payment trends across time and geography by examining variations by `year`, `month`, `state`, and `region`.
 
-Explain why physician payments are high by breaking down payment types and categories
+- Explain physician payment dominance by breaking down payments by `recipient_type`, `recipient_specialty`, `nature_of_payment`, and `form_of_payment`.
 
-Benchmark manufacturers against competitors based on spending and reach
+- Benchmark manufacturers and medical products based on spending levels, geographic reach, and product portfolio.
 
-Identify dominant therapeutic areas and product categories
-
-Visualize insights through interactive, audience-specific BI dashboards
-
-Demonstrate the application of Big Data analytics in healthcare transparency and market intelligence
+- Visualize insights through interactive business intelligence dashboards and demonstrate the role of Big Data analytics in healthcare transparency and market intelligence.
 
 ---
 📂 Dataset Information
