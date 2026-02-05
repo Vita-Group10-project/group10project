@@ -159,7 +159,7 @@ Resources:
 ######################################################
 # LAMBDA
 ######################################################
-   AthenaTriggerLambda:
+  AthenaTriggerLambda:
     Type: AWS::Lambda::Function
     Properties:
       Runtime: python3.11
