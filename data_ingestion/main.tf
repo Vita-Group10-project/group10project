@@ -187,6 +187,42 @@ resource "aws_iam_policy" "s3_policy" {
     ]
   })
 }
+# =========================================================
+# IAM ROLE (EC2 assumes this)
+# =========================================================
+resource "aws_iam_role" "ec2_role" {
+  name = "${var.project_name}-ec2-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+
+# =========================================================
+# ATTACH YOUR POLICY TO ROLE
+# =========================================================
+resource "aws_iam_role_policy_attachment" "ec2_attach_policy" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = aws_iam_policy.s3_policy.arn
+}
+
+
+# =========================================================
+# ⭐ REQUIRED → INSTANCE PROFILE (EC2 NEEDS THIS)
+# =========================================================
+resource "aws_iam_instance_profile" "ec2_profile" {
+  name = "${var.project_name}-instance-profile"
+  role = aws_iam_role.ec2_role.name
+}
+
 
 # =========================================================
 # AMI (AMAZON LINUX 2)
