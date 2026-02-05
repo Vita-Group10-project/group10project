@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "bronze" { 
-bucket = "ter-raw-zone-sahil" lifecycle 
+bucket = "cms-open-payment-raw-zone" lifecycle 
 { prevent_destroy = true } }
 
 
