@@ -7,9 +7,6 @@ Description: CMS Website Ingestion Glue Job
 # ==================================================
 Parameters:
 
-  ScriptS3Path:
-    Type: String
-
   GlueJobName:
     Type: String
     Default: cms-website-ingestion
