@@ -108,6 +108,6 @@ These records enable deep analysis of payment behavior, influence patterns, and 
 - *Monthly Payment Trend:* Track seasonality and time-based patterns using total_payment_amount by payment_year and payment_month.
 ## 📈 Dashboard
 
-![CMS Open Payments Trends & Insight](Visualization/Dashboard.png)
+![CMS Open Payments Trends & Insight](Visualization/CMS Payment Dashboard.png)
 
 
