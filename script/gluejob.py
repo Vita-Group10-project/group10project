@@ -430,7 +430,7 @@ if "Program_Year" in df_final.columns:
 (
     df_final
     .write
-    .mode("append")
+    .mode("overwrite")
     .parquet(OUTPUT_PATH)
 )
 
