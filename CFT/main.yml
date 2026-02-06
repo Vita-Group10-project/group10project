@@ -34,7 +34,6 @@ Parameters:
     Type: String
     Default: https://download.cms.gov/openpayments/PGYR2024_P01232026_01102026/OP_DTL_GNRL_PGYR2024_P01232026_01102026.csv
 
-  # ✅ NEW — transformation paths
   TransformInputPath:
     Type: String
     Default: s3://raw-zone-00/direct/2026/02/06/data.csv
@@ -68,7 +67,7 @@ Resources:
 
 
 ########################################################
-# LAMBDA ROLE (separate — REQUIRED)
+# LAMBDA ROLE
 ########################################################
   AthenaLambdaRole:
     Type: AWS::IAM::Role
@@ -87,7 +86,7 @@ Resources:
 
 
 ########################################################
-# GLUE DATABASE
+# GLUE DATABASE (metadata only)
 ########################################################
   EnrichedDatabase:
     Type: AWS::Glue::Database
@@ -116,21 +115,39 @@ Resources:
 
 
 ########################################################
-# CRAWLER
+# 🔥 IMPROVED PRODUCTION CRAWLER
 ########################################################
   EnrichedCrawler:
     Type: AWS::Glue::Crawler
     Properties:
-      Name: enriched-crawler
+      Name: cms-enriched-crawler
       Role: !GetAtt CrawlerRole.Arn
       DatabaseName: !Ref EnrichedDatabase
+
+      TablePrefix: cms_
+
       Targets:
         S3Targets:
-          - Path: !Sub s3://${EnrichedBucket}/
+          - Path: !Sub s3://${EnrichedBucket}/transformed_1/
+
+      SchemaChangePolicy:
+        UpdateBehavior: UPDATE_IN_DATABASE
+        DeleteBehavior: LOG
+
+      RecrawlPolicy:
+        RecrawlBehavior: CRAWL_NEW_FOLDERS_ONLY
+
+      Configuration: >
+        {
+          "Version": 1.0,
+          "CrawlerOutput": {
+            "Partitions": { "AddOrUpdateBehavior": "InheritFromTable" }
+          }
+        }
 
 
 ########################################################
-# GLUE JOB 1 – INGESTION
+# GLUE INGESTION JOB
 ########################################################
   GlueIngestionJob:
     Type: AWS::Glue::Job
@@ -140,12 +157,10 @@ Resources:
       GlueVersion: '4.0'
       WorkerType: G.1X
       NumberOfWorkers: 5
-
       Command:
         Name: glueetl
         ScriptLocation: !Sub s3://${ScriptBucket}/${IngestScript}
         PythonVersion: 3
-
       DefaultArguments:
         "--RAW_BUCKET": !Ref RawBucket
         "--URL": !Ref SourceURL
@@ -153,7 +168,7 @@ Resources:
 
 
 ########################################################
-# GLUE JOB 2 – TRANSFORM (UPDATED WITH PARAMETERS)
+# GLUE TRANSFORM JOB (WITH PARAMETERS)
 ########################################################
   GlueTransformJob:
     Type: AWS::Glue::Job
@@ -163,12 +178,10 @@ Resources:
       GlueVersion: '4.0'
       WorkerType: G.1X
       NumberOfWorkers: 5
-
       Command:
         Name: glueetl
         ScriptLocation: !Sub s3://${ScriptBucket}/${TransformScript}
         PythonVersion: 3
-
       DefaultArguments:
         "--INPUT_PATH": !Ref TransformInputPath
         "--OUTPUT_PATH": !Ref TransformOutputPath
@@ -176,50 +189,7 @@ Resources:
 
 
 ########################################################
-# LAMBDA FUNCTION
-########################################################
-  AthenaTriggerLambda:
-    Type: AWS::Lambda::Function
-    Properties:
-      Runtime: python3.11
-      Handler: athena_trigger.lambda_handler
-      Timeout: 900
-      Role: !GetAtt AthenaLambdaRole.Arn
-      Code:
-        S3Bucket: !Ref ScriptBucket
-        S3Key: !Ref LambdaZip
-
-
-########################################################
-# EVENTBRIDGE → LAMBDA (auto trigger when enriched updated)
-########################################################
-  S3EventRule:
-    Type: AWS::Events::Rule
-    Properties:
-      EventPattern:
-        source:
-          - aws.s3
-        detail-type:
-          - Object Created
-        detail:
-          bucket:
-            name:
-              - !Ref EnrichedBucket
-      Targets:
-        - Arn: !GetAtt AthenaTriggerLambda.Arn
-          Id: LambdaTarget
-
-
-  LambdaInvokePermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref AthenaTriggerLambda
-      Principal: events.amazonaws.com
-
-
-########################################################
-# STEP FUNCTION ROLE
+# STEP FUNCTION (STRICT SEQUENTIAL)
 ########################################################
   StepFunctionRole:
     Type: AWS::IAM::Role
@@ -232,7 +202,7 @@ Resources:
               Service: states.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        - PolicyName: StepAccess
+        - PolicyName: GlueAccess
           PolicyDocument:
             Statement:
               - Effect: Allow
@@ -241,9 +211,6 @@ Resources:
                 Resource: "*"
 
 
-########################################################
-# STEP FUNCTION (STRICT SEQUENTIAL)
-########################################################
   PipelineStateMachine:
     Type: AWS::StepFunctions::StateMachine
     Properties:
@@ -267,7 +234,7 @@ Resources:
             "Crawler": {
               "Type": "Task",
               "Resource": "arn:aws:states:::aws-sdk:glue:startCrawler",
-              "Parameters": {"Name": "enriched-crawler"},
+              "Parameters": {"Name": "cms-enriched-crawler"},
               "End": true
             }
           }
@@ -278,5 +245,8 @@ Resources:
 # OUTPUTS
 ########################################################
 Outputs:
+  GlueDatabase:
+    Value: cms_enriched_db
+
   StateMachine:
     Value: !Ref PipelineStateMachine
