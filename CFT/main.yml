@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Full CMS Pipeline (Glue → Glue → Crawler → Lambda → Athena)
+Description: Full CMS Pipeline (Glue → Glue → Crawler → Lambda trigger)
 
 ########################################################
 # PARAMETERS
@@ -9,6 +9,14 @@ Parameters:
   ScriptBucket:
     Type: String
     Default: glue-etl-script-00
+
+  RawBucket:
+    Type: String
+    Default: raw-zone-00
+
+  EnrichedBucket:
+    Type: String
+    Default: enriched-zone-00
 
   IngestScript:
     Type: String
@@ -22,14 +30,6 @@ Parameters:
     Type: String
     Default: athena_trigger.zip
 
-  RawBucket:
-    Type: String
-    Default: raw-zone-00
-
-  EnrichedBucket:
-    Type: String
-    Default: enriched-zone-00
-
   SourceURL:
     Type: String
     Default: https://download.cms.gov/openpayments/PGYR2024_P01232026_01102026/OP_DTL_GNRL_PGYR2024_P01232026_01102026.csv
@@ -40,10 +40,9 @@ Parameters:
 ########################################################
 Resources:
 
-######################################################
-# IAM ROLES
-######################################################
-
+########################################################
+# GLUE ROLE
+########################################################
   GlueExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -59,9 +58,28 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
 
 
-  ######################################################
-  # GLUE DATABASE (NEW)
-  ######################################################
+########################################################
+# LAMBDA ROLE (separate!)
+########################################################
+  AthenaLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonAthenaFullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+
+
+########################################################
+# GLUE DATABASE
+########################################################
   EnrichedDatabase:
     Type: AWS::Glue::Database
     Properties:
@@ -70,9 +88,9 @@ Resources:
         Name: cms_enriched_db
 
 
-  ######################################################
-  # GLUE CRAWLER ROLE (NEW)
-  ######################################################
+########################################################
+# CRAWLER ROLE
+########################################################
   CrawlerRole:
     Type: AWS::IAM::Role
     Properties:
@@ -88,9 +106,9 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
 
 
-  ######################################################
-  # GLUE CRAWLER (NEW)
-  ######################################################
+########################################################
+# CRAWLER
+########################################################
   EnrichedCrawler:
     Type: AWS::Glue::Crawler
     Properties:
@@ -100,14 +118,11 @@ Resources:
       Targets:
         S3Targets:
           - Path: !Sub s3://${EnrichedBucket}/
-      SchemaChangePolicy:
-        UpdateBehavior: UPDATE_IN_DATABASE
-        DeleteBehavior: LOG
 
 
-######################################################
-# GLUE INGESTION JOB
-######################################################
+########################################################
+# GLUE JOB 1 – INGESTION
+########################################################
   GlueIngestionJob:
     Type: AWS::Glue::Job
     Properties:
@@ -125,9 +140,9 @@ Resources:
         "--URL": !Ref SourceURL
 
 
-######################################################
-# GLUE TRANSFORM JOB
-######################################################
+########################################################
+# GLUE JOB 2 – TRANSFORM
+########################################################
   GlueTransformJob:
     Type: AWS::Glue::Job
     Properties:
@@ -141,25 +156,10 @@ Resources:
         ScriptLocation: !Sub s3://${ScriptBucket}/${TransformScript}
         PythonVersion: 3
 
-  AthenaLambdaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
 
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AmazonAthenaFullAccess
-        - arn:aws:iam::aws:policy/AmazonS3FullAccess
-
-######################################################
-# LAMBDA
-######################################################
+########################################################
+# LAMBDA FUNCTION
+########################################################
   AthenaTriggerLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -172,9 +172,37 @@ Resources:
         S3Key: !Ref LambdaZip
 
 
-######################################################
-# STEP FUNCTION (UPDATED WITH CRAWLER)
-######################################################
+########################################################
+# EVENTBRIDGE → LAMBDA (auto trigger on enriched bucket)
+########################################################
+  S3EventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern:
+        source:
+          - aws.s3
+        detail-type:
+          - Object Created
+        detail:
+          bucket:
+            name:
+              - !Ref EnrichedBucket
+      Targets:
+        - Arn: !GetAtt AthenaTriggerLambda.Arn
+          Id: LambdaTarget
+
+
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AthenaTriggerLambda
+      Principal: events.amazonaws.com
+
+
+########################################################
+# STEP FUNCTION ROLE
+########################################################
   StepFunctionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -186,16 +214,18 @@ Resources:
               Service: states.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        - PolicyName: FullAccess
+        - PolicyName: StepAccess
           PolicyDocument:
             Statement:
               - Effect: Allow
                 Action:
                   - glue:*
-                  - lambda:InvokeFunction
                 Resource: "*"
 
 
+########################################################
+# STEP FUNCTION (STRICT SEQUENTIAL)
+########################################################
   PipelineStateMachine:
     Type: AWS::StepFunctions::StateMachine
     Properties:
@@ -204,38 +234,22 @@ Resources:
         {
           "StartAt": "Ingestion",
           "States": {
-
             "Ingestion": {
               "Type": "Task",
               "Resource": "arn:aws:states:::glue:startJobRun.sync",
               "Parameters": {"JobName": "${GlueIngestionJob}"},
               "Next": "Transform"
             },
-
             "Transform": {
               "Type": "Task",
               "Resource": "arn:aws:states:::glue:startJobRun.sync",
               "Parameters": {"JobName": "${GlueTransformJob}"},
-              "Next": "StartCrawler"
+              "Next": "Crawler"
             },
-
-            "StartCrawler": {
+            "Crawler": {
               "Type": "Task",
               "Resource": "arn:aws:states:::aws-sdk:glue:startCrawler",
               "Parameters": {"Name": "enriched-crawler"},
-              "Next": "WaitCrawler"
-            },
-
-            "WaitCrawler": {
-              "Type": "Wait",
-              "Seconds": 90,
-              "Next": "LambdaTrigger"
-            },
-
-            "LambdaTrigger": {
-              "Type": "Task",
-              "Resource": "arn:aws:states:::lambda:invoke",
-              "Parameters": {"FunctionName": "${AthenaTriggerLambda}"},
               "End": true
             }
           }
@@ -246,11 +260,5 @@ Resources:
 # OUTPUTS
 ########################################################
 Outputs:
-  Database:
-    Value: cms_enriched_db
-
-  Crawler:
-    Value: enriched-crawler
-
   StateMachine:
     Value: !Ref PipelineStateMachine
