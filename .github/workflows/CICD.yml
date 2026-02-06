@@ -10,12 +10,10 @@ on:
       - Lambda-iceberg-table/**
       - CFT/main.yml
 
-
 env:
   AWS_REGION: us-east-1
   STACK_NAME: main-stack
   SCRIPT_BUCKET: glue-etl-script-00
-
 
 jobs:
   deploy:
@@ -24,17 +22,15 @@ jobs:
     steps:
 
     # ==========================================
-    # Checkout repo
+    # Checkout
     # ==========================================
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
 
     # ==========================================
     # AWS Login
     # ==========================================
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
+    - uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -42,7 +38,7 @@ jobs:
 
 
     # ==========================================
-    # Package Lambda (python must be root)
+    # Package Lambda
     # ==========================================
     - name: Package Lambda
       run: |
@@ -52,46 +48,67 @@ jobs:
 
 
     # ==========================================
-    # Upload Glue scripts to S3
+    # Upload scripts to S3
     # ==========================================
-    - name: Upload Glue scripts
+    - name: Upload scripts
       run: |
         aws s3 cp script/ s3://${SCRIPT_BUCKET}/script/ --recursive
+        aws s3 cp athena_trigger.zip s3://${SCRIPT_BUCKET}/
 
 
     # ==========================================
-    # Upload Lambda zip to S3
+    # Deploy CloudFormation
     # ==========================================
-    - name: Upload Lambda package
-      run: |
-        aws s3 cp athena_trigger.zip s3://${SCRIPT_BUCKET}/athena_trigger.zip
-
-
-    # ==========================================
-    # Deploy SINGLE CloudFormation stack
-    # ==========================================
-    - name: Deploy CloudFormation stack
+    - name: Deploy stack
       run: |
         aws cloudformation deploy \
           --template-file CFT/main.yml \
           --stack-name ${STACK_NAME} \
-          --capabilities CAPABILITY_NAMED_IAM \
-          --region ${AWS_REGION} \
-          --parameter-overrides \
-            ScriptBucket=${SCRIPT_BUCKET}
+          --capabilities CAPABILITY_NAMED_IAM
 
 
     # ==========================================
-    # Start Step Function (runs Glue → Glue → Lambda)
+    # Start Step Function
     # ==========================================
-    - name: Start Pipeline Execution
+    - name: Start pipeline
+      id: start
       run: |
         ARN=$(aws cloudformation describe-stacks \
           --stack-name ${STACK_NAME} \
           --query "Stacks[0].Outputs[?OutputKey=='StateMachine'].OutputValue" \
           --output text)
 
-        echo "Starting Step Function execution..."
+        EXEC_ARN=$(aws stepfunctions start-execution \
+          --state-machine-arn $ARN \
+          --query executionArn \
+          --output text)
 
-        aws stepfunctions start-execution \
-          --state-machine-arn $ARN
+        echo "EXEC_ARN=$EXEC_ARN" >> $GITHUB_ENV
+        echo "Started execution: $EXEC_ARN"
+
+
+    # ==========================================
+    # WAIT for completion (sequential handled by Step Functions)
+    # ==========================================
+    - name: Wait for pipeline completion
+      run: |
+        while true; do
+          STATUS=$(aws stepfunctions describe-execution \
+            --execution-arn $EXEC_ARN \
+            --query status \
+            --output text)
+
+          echo "Pipeline status: $STATUS"
+
+          if [ "$STATUS" = "SUCCEEDED" ]; then
+            echo "Pipeline completed successfully"
+            exit 0
+          fi
+
+          if [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "TIMED_OUT" ] || [ "$STATUS" = "ABORTED" ]; then
+            echo "Pipeline failed"
+            exit 1
+          fi
+
+          sleep 30
+        done
