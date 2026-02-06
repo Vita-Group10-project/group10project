@@ -131,7 +131,7 @@ Resources:
           - Path: !Sub s3://${EnrichedBucket}/transformed_1/
 
       SchemaChangePolicy:
-        UpdateBehavior: UPDATE_IN_DATABASE
+        UpdateBehavior: LOG
         DeleteBehavior: LOG
 
       RecrawlPolicy:
