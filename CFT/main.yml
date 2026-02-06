@@ -34,6 +34,15 @@ Parameters:
     Type: String
     Default: https://download.cms.gov/openpayments/PGYR2024_P01232026_01102026/OP_DTL_GNRL_PGYR2024_P01232026_01102026.csv
 
+  # ✅ NEW — transformation paths
+  TransformInputPath:
+    Type: String
+    Default: s3://raw-zone-00/direct/2026/02/06/data.csv
+
+  TransformOutputPath:
+    Type: String
+    Default: s3://enriched-zone-00/transformed_1/
+
 
 ########################################################
 # RESOURCES
@@ -59,7 +68,7 @@ Resources:
 
 
 ########################################################
-# LAMBDA ROLE (separate!)
+# LAMBDA ROLE (separate — REQUIRED)
 ########################################################
   AthenaLambdaRole:
     Type: AWS::IAM::Role
@@ -131,17 +140,20 @@ Resources:
       GlueVersion: '4.0'
       WorkerType: G.1X
       NumberOfWorkers: 5
+
       Command:
         Name: glueetl
         ScriptLocation: !Sub s3://${ScriptBucket}/${IngestScript}
         PythonVersion: 3
+
       DefaultArguments:
         "--RAW_BUCKET": !Ref RawBucket
         "--URL": !Ref SourceURL
+        "--job-language": "python"
 
 
 ########################################################
-# GLUE JOB 2 – TRANSFORM
+# GLUE JOB 2 – TRANSFORM (UPDATED WITH PARAMETERS)
 ########################################################
   GlueTransformJob:
     Type: AWS::Glue::Job
@@ -151,10 +163,16 @@ Resources:
       GlueVersion: '4.0'
       WorkerType: G.1X
       NumberOfWorkers: 5
+
       Command:
         Name: glueetl
         ScriptLocation: !Sub s3://${ScriptBucket}/${TransformScript}
         PythonVersion: 3
+
+      DefaultArguments:
+        "--INPUT_PATH": !Ref TransformInputPath
+        "--OUTPUT_PATH": !Ref TransformOutputPath
+        "--job-language": "python"
 
 
 ########################################################
@@ -173,7 +191,7 @@ Resources:
 
 
 ########################################################
-# EVENTBRIDGE → LAMBDA (auto trigger on enriched bucket)
+# EVENTBRIDGE → LAMBDA (auto trigger when enriched updated)
 ########################################################
   S3EventRule:
     Type: AWS::Events::Rule
