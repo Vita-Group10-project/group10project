@@ -81,7 +81,7 @@ These records enable deep analysis of payment behavior, influence patterns, and 
 |----------------------------------|----------------------------------------------------|
 | AWS Cloud Service                | AWS S3, AWS Glue, AWS Athena, AWS EC2, AWS Lambda |
 | Programming Language             | PySpark, SQL                                       |
-| Automation & CI/CD               | Terraform, GitHub Actions                          |
+| Automation & CI/CD               | CFT, Terraform, GitHub Actions                          |
 | Project Management & Collaboration | Jira, GitHub                                      |
 | Visualization Tool               | Power BI                                           |
 
