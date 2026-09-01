@@ -8,21 +8,21 @@ Parameters:
 
   ScriptS3Path:
     Type: String
-    Default: s3://glue-etl-script-00/script/gluejob.py
+    Default: s3://glue-etl-script-0/script/gluejob.py
 
   TempDir:
     Type: String
-    Default: s3://glue-etl-script-00/temp/
+    Default: s3://glue-etl-script-0/temp/
     
   InputPath:
     Type: String
     Description: Default raw input path
-    Default: s3://raw-zone-00/direct/2026/02/05/data.csv
+    Default: s3://raw-zone-0/direct/2026/02/05/data.csv
 
   OutputPath:
     Type: String
     Description: Default transformed output path
-    Default: s3://enriched-zone-00/transformed_1/
+    Default: s3://enriched-zone-0/transformed_1/
     
   WorkerType:
     Type: String
@@ -67,12 +67,12 @@ Resources:
                   - s3:PutObject
                   - s3:ListBucket
                 Resource:
-                  - arn:aws:s3:::glue-etl-script-00
-                  - arn:aws:s3:::glue-etl-script-00/*
-                  - arn:aws:s3:::raw-zone-00
-                  - arn:aws:s3:::raw-zone-00/*
-                  - arn:aws:s3:::enriched-zone-00
-                  - arn:aws:s3:::enriched-zone-00/*
+                  - arn:aws:s3:::glue-etl-script-0
+                  - arn:aws:s3:::glue-etl-script-0/*
+                  - arn:aws:s3:::raw-zone-0
+                  - arn:aws:s3:::raw-zone-0/*
+                  - arn:aws:s3:::enriched-zone-0
+                  - arn:aws:s3:::enriched-zone-0/*
 
   # -------------------------------------------------
   # GLUE JOB
