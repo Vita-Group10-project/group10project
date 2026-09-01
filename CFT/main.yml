@@ -36,11 +36,11 @@ Parameters:
 
   TransformInputPath:
     Type: String
-    Default: s3://raw-zone-00/direct/2026/02/06/data.csv
+    Default: s3://raw-zone-0/direct/2026/02/06/data.csv
 
   TransformOutputPath:
     Type: String
-    Default: s3://enriched-zone-00/transformed_1/
+    Default: s3://enriched-zone-0/transformed_1/
 
 
 ########################################################
