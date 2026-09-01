@@ -61,7 +61,7 @@ Resources:
       NumberOfWorkers: !Ref NumberOfWorkers
 
       DefaultArguments:
-        "--RAW_BUCKET": "raw-zone-00"
+        "--RAW_BUCKET": "raw-zone-0"
         "--URL": "https://download.cms.gov/openpayments/PGYR2024_P01232026_01102026/OP_DTL_GNRL_PGYR2024_P01232026_01102026.csv"
         "--job-language": "python"
 
