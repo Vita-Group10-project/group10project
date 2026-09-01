@@ -8,15 +8,15 @@ Parameters:
 
   ScriptBucket:
     Type: String
-    Default: glue-etl-script-00
+    Default: glue-etl-script-0
 
   RawBucket:
     Type: String
-    Default: raw-zone-00
+    Default: raw-zone-0
 
   EnrichedBucket:
     Type: String
-    Default: enriched-zone-00
+    Default: enriched-zone-0
 
   IngestScript:
     Type: String
